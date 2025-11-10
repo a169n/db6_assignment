@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
-import { useAuth } from '@/features/auth/auth-context';
+import { useAuth, type AuthUser } from '@/features/auth/auth-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -31,7 +31,8 @@ const LoginPage: React.FC = () => {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      await api.post('/auth/login', data);
+      const response = await api.post<{ user: AuthUser }>('/auth/login', data);
+      queryClient.setQueryData<AuthUser | null>(['auth', 'me'], response.data.user);
       await refetch();
       queryClient.invalidateQueries({ queryKey: ['recommendations'] });
       toast.success('Signed in successfully');

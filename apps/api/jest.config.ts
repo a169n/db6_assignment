@@ -15,7 +15,7 @@ const config: Config = {
     '^@middleware/(.*)$': '<rootDir>/src/middleware/$1',
     '^@reco/(.*)$': '<rootDir>/src/reco/$1',
     '^@schemas/(.*)$': '<rootDir>/src/schemas/$1',
-    '^@types/(.*)$': '<rootDir>/src/types/$1',
+    '^@app-types/(.*)$': '<rootDir>/src/types/$1',
     '^@lib/(.*)$': '<rootDir>/src/lib/$1'
   }
 };

@@ -31,8 +31,10 @@ export class SearchService {
       .limit(params.limit + 1);
 
     const hasMore = items.length > params.limit;
-    const results = hasMore ? items.slice(0, -1) : items;
-    const nextCursor = hasMore ? results[results.length - 1]._id.toString() : null;
+    const results = (hasMore ? items.slice(0, -1) : items) as typeof items;
+    const lastResult = results[results.length - 1];
+    const nextCursor =
+      hasMore && lastResult ? (lastResult._id as Types.ObjectId).toString() : null;
 
     return {
       results,

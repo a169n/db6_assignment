@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
-import { useAuth } from '@/features/auth/auth-context';
+import { useAuth, type AuthUser } from '@/features/auth/auth-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -41,11 +41,12 @@ const RegisterPage: React.FC = () => {
 
   const onSubmit = async (data: RegisterForm) => {
     try {
-      await api.post('/auth/register', {
+      const response = await api.post<{ user: AuthUser }>('/auth/register', {
         name: data.name,
         email: data.email,
         password: data.password
       });
+      queryClient.setQueryData<AuthUser | null>(['auth', 'me'], response.data.user);
       await refetch();
       queryClient.invalidateQueries({ queryKey: ['recommendations'] });
       toast.success('Account created! Welcome to NovaShop');

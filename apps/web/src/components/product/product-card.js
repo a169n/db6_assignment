@@ -1,0 +1,7 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+export const ProductCard = ({ id, name, slug, price, image, description, onView, footer }) => {
+    return (_jsxs(Card, { className: "flex h-full flex-col", children: [_jsxs(CardHeader, { className: "space-y-3", children: [_jsx("div", { className: "aspect-[4/3] overflow-hidden rounded-md bg-slate-100 dark:bg-slate-800", children: image ? (_jsx("img", { src: image, alt: name, className: "h-full w-full object-cover" })) : (_jsx("div", { className: "flex h-full w-full items-center justify-center text-sm text-slate-400", children: "No image" })) }), _jsx(CardTitle, { className: "line-clamp-1 text-base", children: name }), _jsxs("span", { className: "text-sm font-semibold text-brand", children: ["$", price.toFixed(2)] })] }), _jsxs(CardContent, { className: "flex flex-1 flex-col justify-between space-y-4 text-sm", children: [description && _jsx("p", { className: "line-clamp-3 text-slate-500 dark:text-slate-400", children: description }), _jsxs("div", { className: "mt-auto flex items-center justify-between gap-2", children: [_jsx(Button, { variant: "outline", size: "sm", asChild: true, onClick: onView, children: _jsx(Link, { to: `/products/${slug}`, children: "View" }) }), footer] })] })] }));
+};

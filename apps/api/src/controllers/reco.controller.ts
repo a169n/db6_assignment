@@ -2,7 +2,7 @@ import type { Response } from 'express';
 import { RecommendationService } from '@reco/recommendation.service';
 import { recommendationSchema } from '@schemas/reco.schema';
 import { ProductModel } from '@models/product.model';
-import type { AuthenticatedRequest } from '@types/request';
+import type { AuthenticatedRequest } from '@app-types/request';
 
 export class RecommendationController {
   constructor(private readonly service: RecommendationService) {}

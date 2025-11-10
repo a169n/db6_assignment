@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+
+# Build output
+dist/
+build/
+.turbo/
+
+# Local env files
+.env
+.env.*.local
+.env.local
+
+# Testing and coverage
+coverage/
+.nyc_output/
+
+# IDE/editor metadata
+.idea/
+.vscode/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Generated artifacts inside workspaces
+apps/api/dist/
+apps/web/dist/
+apps/web/node_modules/

@@ -4,6 +4,7 @@ import { ProductModel } from '@models/product.model';
 import { InteractionModel } from '@models/interaction.model';
 import { metricsStore } from '@lib/metrics';
 import { redisClient } from '@plugins/redis';
+import { UserModel } from '@models/user.model';
 
 interface SimilarityScore {
   id: string;
@@ -123,6 +124,18 @@ export class RecommendationService {
       return this.coldStart(limit);
     }
 
+    const neighborProfiles = await UserModel.find({ _id: { $in: neighborIds } })
+      .select({ name: 1 })
+      .lean();
+    const neighborNameMap = new Map(
+      neighborProfiles.map((profile) => [profile._id.toString(), profile.name || 'Similar shopper'])
+    );
+
+    const formatNeighborNames = (ids: string[]) =>
+      ids
+        .map((id) => neighborNameMap.get(id) || `User ${id.slice(-4)}`)
+        .join(', ');
+
     const neighborInteractions = await InteractionModel.aggregate([
       { $match: { userId: { $in: neighborIds } } },
       {
@@ -139,10 +152,7 @@ export class RecommendationService {
       .map((i) => ({
         id: i._id.productId.toString(),
         score: i.score,
-        reason: `Similar users (${topNeighbors
-          .slice(0, 3)
-          .map(([id]) => id)
-          .join(', ')})`
+        reason: `Similar users (${formatNeighborNames(topNeighbors.slice(0, 3).map(([id]) => id))})`
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);

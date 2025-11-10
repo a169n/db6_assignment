@@ -4,7 +4,7 @@ import { AuthService } from '@services/auth.service';
 import { registerSchema, loginSchema } from '@schemas/auth.schema';
 import { env } from '@config/env';
 import { logger } from '@config/logger';
-import type { AuthenticatedRequest } from '@types/request';
+import type { AuthenticatedRequest } from '@app-types/request';
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -97,20 +97,23 @@ export class AuthController {
   }
 
   private setTokens(response: Response, tokens: { accessToken: string; refreshToken: string }) {
+    const accessMaxAgeMs = 1000 * 60 * 15;
+    const refreshMaxAgeMs = 1000 * 60 * 60 * 24 * 7;
+
     response
       .cookie('accessToken', tokens.accessToken, {
         httpOnly: true,
         sameSite: 'lax',
         secure: env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 60 * 15
+        maxAge: accessMaxAgeMs
       })
       .cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
         sameSite: 'lax',
         secure: env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7
+        maxAge: refreshMaxAgeMs
       });
   }
 }

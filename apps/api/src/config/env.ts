@@ -1,15 +1,51 @@
 import { config } from 'dotenv';
+import fs from 'node:fs';
+import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 
-config({ path: process.env.API_ENV_PATH || undefined });
+function resolveEnvPath() {
+  if (process.env.API_ENV_PATH) {
+    return process.env.API_ENV_PATH;
+  }
+  let current = process.cwd();
+  const root = path.parse(current).root;
+  while (true) {
+    const candidate = path.join(current, '.env');
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+    if (current === root) {
+      return undefined;
+    }
+    current = path.dirname(current);
+  }
+}
+
+config({ path: resolveEnvPath() });
+
+type SecretNames = 'JWT_ACCESS_SECRET' | 'JWT_REFRESH_SECRET';
+
+const generatedSecrets = new Set<SecretNames>();
+
+function ensureSecret(name: SecretNames) {
+  const existing = process.env[name];
+  if (existing && existing.trim().length > 0) {
+    return existing;
+  }
+  const generated = randomBytes(48).toString('hex');
+  process.env[name] = generated;
+  generatedSecrets.add(name);
+  return generated;
+}
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.string().default('4000'),
   MONGO_URI: z.string().default('mongodb://localhost:27017/nova'),
   REDIS_URL: z.string().default('redis://localhost:6379'),
-  JWT_ACCESS_SECRET: z.string().default('changeme-access-secret-changeme-access'),
-  JWT_REFRESH_SECRET: z.string().default('changeme-refresh-secret-changeme-refresh'),
+  JWT_ACCESS_SECRET: z.string().default(ensureSecret('JWT_ACCESS_SECRET')),
+  JWT_REFRESH_SECRET: z.string().default(ensureSecret('JWT_REFRESH_SECRET')),
   WEB_ORIGIN: z.string().default('http://localhost:5173'),
   RECO_MODE: z.enum(['user', 'item']).default('user'),
   ACCESS_TOKEN_TTL: z.string().default('15m'),
@@ -20,3 +56,11 @@ const envSchema = z.object({
 });
 
 export const env = envSchema.parse(process.env);
+
+if (generatedSecrets.size > 0) {
+  console.warn(
+    `Generated fallback JWT secret(s) for: ${Array.from(generatedSecrets).join(
+      ', '
+    )}. Tokens will be invalidated each time the server restarts. Set these in your environment to avoid this warning.`
+  );
+}

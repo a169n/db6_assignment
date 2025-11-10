@@ -1,8 +1,10 @@
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
+import type { StringValue } from 'ms';
 import { env } from '@config/env';
 import { UserModel } from '@models/user.model';
 import { redisClient } from '@plugins/redis';
+import { logger } from '@config/logger';
 
 export interface TokenPair {
   accessToken: string;
@@ -10,6 +12,7 @@ export interface TokenPair {
 }
 
 const localRefreshTokens = new Set<string>();
+const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 function refreshKey(userId: string, token: string) {
   return `refresh:${userId}:${token}`;
@@ -25,42 +28,42 @@ export class AuthService {
   }
 
   async generateTokens(userId: string, isAdmin: boolean): Promise<TokenPair> {
+    const accessExpiresIn = env.ACCESS_TOKEN_TTL as StringValue | number;
+    const refreshExpiresIn = env.REFRESH_TOKEN_TTL as StringValue | number;
+
     const accessToken = jwt.sign(
       { sub: userId, type: 'access', isAdmin },
       env.JWT_ACCESS_SECRET,
-      { expiresIn: env.ACCESS_TOKEN_TTL }
+      { expiresIn: accessExpiresIn }
     );
     const refreshToken = jwt.sign(
       { sub: userId, type: 'refresh', isAdmin },
       env.JWT_REFRESH_SECRET,
-      { expiresIn: env.REFRESH_TOKEN_TTL }
+      { expiresIn: refreshExpiresIn }
     );
     const key = refreshKey(userId, refreshToken);
-    if (redisClient.isOpen) {
-      await redisClient.set(key, '1', {
-        EX: 60 * 60 * 24 * 7
-      });
-    } else {
-      localRefreshTokens.add(key);
-    }
+    await this.storeRefreshToken(key);
     return { accessToken, refreshToken };
   }
 
   async revokeRefreshToken(userId: string, token: string) {
     const key = refreshKey(userId, token);
-    if (redisClient.isOpen) {
-      await redisClient.del(key);
-    } else {
-      localRefreshTokens.delete(key);
-    }
+    await this.deleteRefreshToken(key);
   }
 
   async verifyRefreshToken(userId: string, token: string) {
+    const key = refreshKey(userId, token);
     if (!redisClient.isOpen) {
-      return localRefreshTokens.has(refreshKey(userId, token));
+      return localRefreshTokens.has(key);
     }
-    const exists = await redisClient.get(refreshKey(userId, token));
-    return Boolean(exists);
+    try {
+      const exists = await redisClient.get(key);
+      return Boolean(exists);
+    } catch (err) {
+      logger.warn({ err }, 'Failed to verify refresh token in Redis, falling back to memory store');
+      await redisClient.disconnect().catch(() => undefined);
+      return localRefreshTokens.has(key);
+    }
   }
 
   async register(data: { email: string; password: string; name: string; prefs?: any }) {
@@ -88,5 +91,31 @@ export class AuthService {
     const valid = await this.verifyPassword(user.passwordHash, password);
     if (!valid) return null;
     return user;
+  }
+
+  private async storeRefreshToken(key: string) {
+    if (redisClient.isOpen) {
+      try {
+        await redisClient.set(key, '1', { EX: REFRESH_TTL_SECONDS });
+        return;
+      } catch (err) {
+        logger.warn({ err }, 'Failed to write refresh token to Redis, falling back to memory store');
+        await redisClient.disconnect().catch(() => undefined);
+      }
+    }
+    localRefreshTokens.add(key);
+  }
+
+  private async deleteRefreshToken(key: string) {
+    if (redisClient.isOpen) {
+      try {
+        await redisClient.del(key);
+        return;
+      } catch (err) {
+        logger.warn({ err }, 'Failed to delete refresh token from Redis, clearing local copy instead');
+        await redisClient.disconnect().catch(() => undefined);
+      }
+    }
+    localRefreshTokens.delete(key);
   }
 }

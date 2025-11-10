@@ -15,6 +15,7 @@ export async function connectRedis() {
       logger.info('Connected to Redis');
     } catch (error) {
       logger.warn({ err: error }, 'Failed to connect to Redis, continuing without cache');
+      await redisClient.disconnect().catch(() => undefined);
     }
   }
 }

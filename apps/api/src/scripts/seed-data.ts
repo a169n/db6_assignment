@@ -97,10 +97,10 @@ export async function seedDatabase() {
   const hashedUsers = await hashPasswords(users);
   const userDocs = await UserModel.insertMany(hashedUsers);
 
-  const interactions = buildInteractions(
-    userDocs.map((u) => u._id),
-    productDocs.map((p) => p._id)
-  );
+  const userIds = userDocs.map((u) => u._id as Types.ObjectId);
+  const productIds = productDocs.map((p) => p._id as Types.ObjectId);
+
+  const interactions = buildInteractions(userIds, productIds);
   await InteractionModel.insertMany(interactions);
 
   await mongoose.disconnect();

@@ -16,6 +16,8 @@ export const registerSchema = z.object({
         .optional()
     })
     .partial()
+    .optional()
+    .default({ categories: [] })
 });
 
 export const loginSchema = z.object({

@@ -1,7 +1,7 @@
 import type { Response } from 'express';
 import { createInteractionSchema } from '@schemas/interaction.schema';
 import { InteractionService } from '@services/interaction.service';
-import type { AuthenticatedRequest } from '@types/request';
+import type { AuthenticatedRequest } from '@app-types/request';
 import { redisClient } from '@plugins/redis';
 
 export class InteractionController {

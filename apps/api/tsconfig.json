@@ -1,6 +1,7 @@
 {
   "extends": "../../packages/tsconfig/tsconfig.api.json",
   "compilerOptions": {
+    "types": ["node", "jest"],
     "baseUrl": "./src",
     "paths": {
       "@config/*": ["config/*"],
@@ -13,7 +14,7 @@
       "@middleware/*": ["middleware/*"],
       "@reco/*": ["reco/*"],
       "@schemas/*": ["schemas/*"],
-      "@types/*": ["types/*"],
+      "@app-types/*": ["types/*"],
       "@lib/*": ["lib/*"]
     }
   }

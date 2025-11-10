@@ -1,4 +1,8 @@
-import axios from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
+
+type RetriableRequestConfig = AxiosRequestConfig & {
+  __isRetryRequest?: boolean;
+};
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000',
@@ -8,13 +12,23 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 && !error.config.__isRetryRequest) {
-      try {
-        await api.post('/auth/refresh');
-        error.config.__isRetryRequest = true;
-        return api.request(error.config);
-      } catch (refreshError) {
-        return Promise.reject(refreshError);
+    const originalRequest = (error.config ?? {}) as RetriableRequestConfig;
+    const status = error.response?.status;
+    const url = originalRequest.url ?? '';
+
+    if (status === 401) {
+      const isRefreshCall = url.includes('/auth/refresh');
+      if (isRefreshCall) {
+        return Promise.reject(error);
+      }
+      if (!originalRequest.__isRetryRequest) {
+        originalRequest.__isRetryRequest = true;
+        try {
+          await api.post('/auth/refresh');
+          return api.request(originalRequest);
+        } catch (refreshError) {
+          return Promise.reject(refreshError);
+        }
       }
     }
     return Promise.reject(error);
