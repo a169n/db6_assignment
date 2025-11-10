@@ -1,0 +1,10 @@
+{
+  "name": "@nosql-reco/config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "files": [".eslintrc.cjs", ".prettierrc", "tailwind.config.ts"],
+  "scripts": {
+    "build": "echo 'config package - nothing to build'"
+  }
+}
