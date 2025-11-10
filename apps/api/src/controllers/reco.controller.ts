@@ -1,13 +1,17 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { Response } from 'express';
 import { RecommendationService } from '@reco/recommendation.service';
 import { recommendationSchema } from '@schemas/reco.schema';
 import { ProductModel } from '@models/product.model';
+import type { AuthenticatedRequest } from '@types/request';
 
 export class RecommendationController {
   constructor(private readonly service: RecommendationService) {}
 
-  get = async (request: FastifyRequest, reply: FastifyReply) => {
-    const userId = (request.user as any).sub;
+  get = async (request: AuthenticatedRequest, response: Response) => {
+    const userId = request.user?.sub;
+    if (!userId) {
+      return response.status(401).json({ error: 'UNAUTHORIZED' });
+    }
     const { mode, limit } = recommendationSchema.parse(request.query);
     const recommendations = await this.service.getRecommendations(userId, mode || 'user', limit);
     const productDocs = await ProductModel.find({
@@ -21,6 +25,6 @@ export class RecommendationController {
       }))
       .filter((entry) => entry.product !== undefined);
 
-    return { products };
+    return response.json({ products });
   };
 }

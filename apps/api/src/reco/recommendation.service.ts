@@ -1,9 +1,9 @@
-import type { FastifyInstance } from 'fastify';
 import { Types } from 'mongoose';
 import { logger } from '@config/logger';
 import { ProductModel } from '@models/product.model';
 import { InteractionModel } from '@models/interaction.model';
 import { metricsStore } from '@lib/metrics';
+import { redisClient } from '@plugins/redis';
 
 interface SimilarityScore {
   id: string;
@@ -14,18 +14,33 @@ interface SimilarityScore {
 const CACHE_TTL_SECONDS = 60 * 10;
 
 export class RecommendationService {
-  constructor(private readonly app: FastifyInstance) {}
-
   private cacheKey(userId: string, mode: 'user' | 'item') {
     return `reco:${mode}:${userId}`;
   }
 
+  private async readCache<T>(key: string): Promise<T | null> {
+    if (!redisClient.isOpen) {
+      return null;
+    }
+    const cached = await redisClient.get(key);
+    return cached ? (JSON.parse(cached) as T) : null;
+  }
+
+  private async writeCache(key: string, value: unknown) {
+    if (!redisClient.isOpen) {
+      return;
+    }
+    await redisClient.set(key, JSON.stringify(value), {
+      EX: CACHE_TTL_SECONDS
+    });
+  }
+
   async getRecommendations(userId: string, mode: 'user' | 'item', limit: number) {
     const key = this.cacheKey(userId, mode);
-    const cached = await this.app.redis.get(key);
+    const cached = await this.readCache<SimilarityScore[]>(key);
     if (cached) {
       metricsStore.recordCache(true);
-      return JSON.parse(cached) as SimilarityScore[];
+      return cached;
     }
     metricsStore.recordCache(false);
 
@@ -40,9 +55,7 @@ export class RecommendationService {
     logger.debug({ userId, mode, latency }, 'computed recommendations');
 
     if (recommendations.length) {
-      await this.app.redis.set(key, JSON.stringify(recommendations), {
-        EX: CACHE_TTL_SECONDS
-      });
+      await this.writeCache(key, recommendations);
     }
 
     return recommendations;
@@ -199,26 +212,11 @@ export class RecommendationService {
   }
 
   private async coldStart(limit: number): Promise<SimilarityScore[]> {
-    const trending = await InteractionModel.aggregate([
-      {
-        $group: {
-          _id: '$productId',
-          score: { $sum: '$weight' }
-        }
-      },
-      { $sort: { score: -1 } },
-      { $limit: limit }
-    ]);
-
-    if (!trending.length) {
-      const products = await ProductModel.find().sort({ createdAt: -1 }).limit(limit);
-      return products.map((p) => ({ id: p._id.toString(), score: 1, reason: 'New arrivals' }));
-    }
-
-    return trending.map((t) => ({
-      id: t._id.toString(),
-      score: t.score,
-      reason: 'Trending overall'
+    const products = await ProductModel.find().sort({ createdAt: -1 }).limit(limit).lean();
+    return products.map((product) => ({
+      id: product._id.toString(),
+      score: 0,
+      reason: 'Popular products'
     }));
   }
 }

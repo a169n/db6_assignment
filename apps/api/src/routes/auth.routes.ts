@@ -1,14 +1,20 @@
-import type { FastifyInstance } from 'fastify';
+import type { Application } from 'express';
+import { Router } from 'express';
 import { AuthService } from '@services/auth.service';
 import { AuthController } from '@controllers/auth.controller';
+import { authenticate } from '@middleware/auth';
+import { asyncHandler } from '@utils/async-handler';
 
-export default async function authRoutes(app: FastifyInstance) {
-  const service = new AuthService(app);
+export function registerAuthRoutes(app: Application) {
+  const service = new AuthService();
   const controller = new AuthController(service);
 
-  app.post('/auth/register', controller.register);
-  app.post('/auth/login', controller.login);
-  app.post('/auth/refresh', controller.refresh);
-  app.post('/auth/logout', controller.logout);
-  app.get('/me', { preValidation: [app.authenticate] }, controller.me);
+  const router = Router();
+  router.post('/register', asyncHandler(controller.register));
+  router.post('/login', asyncHandler(controller.login));
+  router.post('/refresh', asyncHandler(controller.refresh));
+  router.post('/logout', asyncHandler(controller.logout));
+
+  app.use('/auth', router);
+  app.get('/me', authenticate, asyncHandler(controller.me));
 }

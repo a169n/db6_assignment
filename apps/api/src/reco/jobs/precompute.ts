@@ -1,16 +1,16 @@
-import { app } from '../../index';
+import { initializeApp, shutdownApp } from '../../index';
 import { RecommendationService } from '../recommendation.service';
 import { UserModel } from '@models/user.model';
 
 async function run() {
-  await app.ready();
-  const service = new RecommendationService(app);
+  await initializeApp();
+  const service = new RecommendationService();
   const users = await UserModel.find().select('_id');
   for (const user of users) {
     await service.getRecommendations(user.id, 'user', 20);
     await service.getRecommendations(user.id, 'item', 20);
   }
-  await app.close();
+  await shutdownApp();
   process.exit(0);
 }
 

@@ -1,8 +1,10 @@
-import type { FastifyInstance } from 'fastify';
+import type { Application } from 'express';
 import { SearchController } from '@controllers/search.controller';
 import { SearchService } from '@services/search.service';
+import { asyncHandler } from '@utils/async-handler';
 
-export default async function searchRoutes(app: FastifyInstance) {
+export function registerSearchRoutes(app: Application) {
   const controller = new SearchController(new SearchService());
-  app.get('/search', controller.search);
+
+  app.get('/search', asyncHandler(controller.search));
 }

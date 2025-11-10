@@ -1,38 +1,38 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { Request, Response } from 'express';
 import { ProductService } from '@services/product.service';
 import { createProductSchema, updateProductSchema, listProductsSchema } from '@schemas/product.schema';
 
 export class ProductController {
   constructor(private readonly service: ProductService) {}
 
-  list = async (request: FastifyRequest, reply: FastifyReply) => {
+  list = async (request: Request, response: Response) => {
     const { page, limit } = listProductsSchema.parse(request.query);
     const { items, total } = await this.service.list(page, limit);
-    return { items, total, page, limit };
+    return response.json({ items, total, page, limit });
   };
 
-  get = async (request: FastifyRequest, reply: FastifyReply) => {
-    const slug = (request.params as { slug: string }).slug;
+  get = async (request: Request, response: Response) => {
+    const { slug } = request.params as { slug: string };
     const product = await this.service.getBySlug(slug);
     if (!product) {
-      return reply.status(404).send({ error: 'NOT_FOUND' });
+      return response.status(404).json({ error: 'NOT_FOUND' });
     }
-    return { product };
+    return response.json({ product });
   };
 
-  create = async (request: FastifyRequest, reply: FastifyReply) => {
+  create = async (request: Request, response: Response) => {
     const data = createProductSchema.parse(request.body);
     const product = await this.service.create(data);
-    return reply.status(201).send({ product });
+    return response.status(201).json({ product });
   };
 
-  update = async (request: FastifyRequest, reply: FastifyReply) => {
+  update = async (request: Request, response: Response) => {
     const data = updateProductSchema.parse(request.body);
     const { id } = request.params as { id: string };
     const product = await this.service.update(id, data);
     if (!product) {
-      return reply.status(404).send({ error: 'NOT_FOUND' });
+      return response.status(404).json({ error: 'NOT_FOUND' });
     }
-    return { product };
+    return response.json({ product });
   };
 }

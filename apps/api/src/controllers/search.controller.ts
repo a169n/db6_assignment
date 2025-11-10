@@ -1,13 +1,13 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { Request, Response } from 'express';
 import { SearchService } from '@services/search.service';
 import { searchSchema } from '@schemas/search.schema';
 
 export class SearchController {
   constructor(private readonly service: SearchService) {}
 
-  search = async (request: FastifyRequest, reply: FastifyReply) => {
+  search = async (request: Request, response: Response) => {
     const params = searchSchema.parse(request.query);
     const results = await this.service.search(params);
-    return results;
+    return response.json(results);
   };
 }

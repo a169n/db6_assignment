@@ -10,6 +10,7 @@
       "@services/*": ["services/*"],
       "@models/*": ["models/*"],
       "@utils/*": ["utils/*"],
+      "@middleware/*": ["middleware/*"],
       "@reco/*": ["reco/*"],
       "@schemas/*": ["schemas/*"],
       "@types/*": ["types/*"],

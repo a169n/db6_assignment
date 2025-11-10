@@ -1,9 +1,10 @@
-import type { FastifyInstance } from 'fastify';
+import type { Application } from 'express';
 import { SystemController } from '@controllers/system.controller';
+import { asyncHandler } from '@utils/async-handler';
 
-export default async function systemRoutes(app: FastifyInstance) {
+export function registerSystemRoutes(app: Application) {
   const controller = new SystemController();
-  app.get('/health', controller.health);
-  app.get('/ready', controller.ready);
-  app.get('/metrics', controller.metrics);
+  app.get('/health', asyncHandler(controller.health));
+  app.get('/ready', asyncHandler(controller.ready));
+  app.get('/metrics', asyncHandler(controller.metrics));
 }
