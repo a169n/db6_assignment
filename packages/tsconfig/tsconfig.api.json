@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../../apps/api/dist",
+    "rootDir": "../../apps/api/src",
+    "lib": ["ES2021"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "types": ["node"],
+    "resolveJsonModule": true
+  },
+  "include": ["../../apps/api/src", "../../apps/api/fastify.d.ts"],
+  "exclude": ["node_modules", "dist"]
+}

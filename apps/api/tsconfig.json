@@ -1,0 +1,19 @@
+{
+  "extends": "../../packages/tsconfig/tsconfig.api.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@config/*": ["config/*"],
+      "@plugins/*": ["plugins/*"],
+      "@routes/*": ["routes/*"],
+      "@controllers/*": ["controllers/*"],
+      "@services/*": ["services/*"],
+      "@models/*": ["models/*"],
+      "@utils/*": ["utils/*"],
+      "@reco/*": ["reco/*"],
+      "@schemas/*": ["schemas/*"],
+      "@types/*": ["types/*"],
+      "@lib/*": ["lib/*"]
+    }
+  }
+}

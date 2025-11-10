@@ -1,0 +1,14 @@
+{
+  "extends": "../../packages/tsconfig/tsconfig.web.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@/components/*": ["components/*"],
+      "@/hooks/*": ["hooks/*"],
+      "@/lib/*": ["lib/*"],
+      "@/pages/*": ["pages/*"],
+      "@/features/*": ["features/*"],
+      "@/routes/*": ["routes/*"]
+    }
+  }
+}

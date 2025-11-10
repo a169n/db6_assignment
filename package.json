@@ -1,0 +1,35 @@
+{
+  "name": "nosql-reco-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Full-stack NoSQL recommendation app",
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "packages/config",
+    "packages/tsconfig"
+  ],
+  "scripts": {
+    "postinstall": "npm run build -ws",
+    "dev": "npm run dev -ws",
+    "build": "npm run build -ws",
+    "start": "npm run start -w apps/api",
+    "lint": "npm run lint -ws",
+    "format": "npm run format -ws",
+    "test": "npm run test -ws",
+    "test:e2e": "npm run test:e2e -ws",
+    "typecheck": "npm run typecheck -ws"
+  },
+  "devDependencies": {
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,css,md}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --max-warnings=0"
+    ]
+  }
+}
