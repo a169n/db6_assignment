@@ -1,18 +1,18 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { metricsStore } from '@lib/metrics';
 
 export class SystemController {
-  health = async (_request: FastifyRequest, reply: FastifyReply) => {
-    return reply.send({ status: 'ok', mongo: mongoose.connection.readyState });
+  health = async (_request: Request, response: Response) => {
+    return response.json({ status: 'ok', mongo: mongoose.connection.readyState });
   };
 
-  ready = async (_request: FastifyRequest, reply: FastifyReply) => {
+  ready = async (_request: Request, response: Response) => {
     const ready = mongoose.connection.readyState === 1;
-    return reply.status(ready ? 200 : 503).send({ ready });
+    return response.status(ready ? 200 : 503).json({ ready });
   };
 
-  metrics = async (_request: FastifyRequest, reply: FastifyReply) => {
-    return reply.send(metricsStore.toJSON());
+  metrics = async (_request: Request, response: Response) => {
+    return response.json(metricsStore.toJSON());
   };
 }

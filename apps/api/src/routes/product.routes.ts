@@ -1,12 +1,18 @@
-import type { FastifyInstance } from 'fastify';
+import type { Application } from 'express';
+import { Router } from 'express';
 import { ProductController } from '@controllers/product.controller';
 import { ProductService } from '@services/product.service';
+import { authenticate, requireAdmin } from '@middleware/auth';
+import { asyncHandler } from '@utils/async-handler';
 
-export default async function productRoutes(app: FastifyInstance) {
+export function registerProductRoutes(app: Application) {
   const controller = new ProductController(new ProductService());
 
-  app.get('/products', controller.list);
-  app.get('/products/:slug', controller.get);
-  app.post('/products', { preValidation: [app.authenticate, app.requireAdmin] }, controller.create);
-  app.patch('/products/:id', { preValidation: [app.authenticate, app.requireAdmin] }, controller.update);
+  const router = Router();
+  router.get('/', asyncHandler(controller.list));
+  router.get('/:slug', asyncHandler(controller.get));
+  router.post('/', authenticate, requireAdmin, asyncHandler(controller.create));
+  router.patch('/:id', authenticate, requireAdmin, asyncHandler(controller.update));
+
+  app.use('/products', router);
 }

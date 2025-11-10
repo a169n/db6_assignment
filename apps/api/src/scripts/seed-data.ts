@@ -3,7 +3,6 @@ import { UserModel } from '@models/user.model';
 import { ProductModel } from '@models/product.model';
 import { InteractionModel } from '@models/interaction.model';
 import { env } from '@config/env';
-import { app } from '../index';
 import { faker } from '@faker-js/faker';
 
 const categories = ['Electronics', 'Books', 'Home', 'Fitness', 'Fashion', 'Outdoors', 'Beauty'];
@@ -51,7 +50,7 @@ function buildUsers() {
 
 async function hashPasswords(users: any[]) {
   const { AuthService } = await import('@services/auth.service');
-  const service = new AuthService(app);
+  const service = new AuthService();
   return Promise.all(
     users.map(async (user) => ({
       email: user.email,

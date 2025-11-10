@@ -1,87 +1,89 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { AuthService } from '@services/auth.service';
 import { registerSchema, loginSchema } from '@schemas/auth.schema';
 import { env } from '@config/env';
+import { logger } from '@config/logger';
+import type { AuthenticatedRequest } from '@types/request';
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  register = async (request: FastifyRequest, reply: FastifyReply) => {
+  register = async (request: Request, response: Response) => {
     const data = registerSchema.parse(request.body);
     try {
       const user = await this.authService.register(data);
-      const tokens = await this.authService.generateTokens(user.id);
-      this.setTokens(reply, tokens);
-      return reply.status(201).send({ user: this.sanitizeUser(user) });
+      const tokens = await this.authService.generateTokens(user.id, user.isAdmin);
+      this.setTokens(response, tokens);
+      return response.status(201).json({ user: this.sanitizeUser(user) });
     } catch (error) {
       if ((error as Error).message === 'EMAIL_TAKEN') {
-        return reply.status(409).send({ error: 'EMAIL_TAKEN' });
+        return response.status(409).json({ error: 'EMAIL_TAKEN' });
       }
       throw error;
     }
   };
 
-  login = async (request: FastifyRequest, reply: FastifyReply) => {
+  login = async (request: Request, response: Response) => {
     const { email, password } = loginSchema.parse(request.body);
     const user = await this.authService.validateUser(email, password);
     if (!user) {
-      return reply.status(401).send({ error: 'INVALID_CREDENTIALS' });
+      return response.status(401).json({ error: 'INVALID_CREDENTIALS' });
     }
-    const tokens = await this.authService.generateTokens(user.id);
-    this.setTokens(reply, tokens);
-    return { user: this.sanitizeUser(user) };
+    const tokens = await this.authService.generateTokens(user.id, user.isAdmin);
+    this.setTokens(response, tokens);
+    return response.json({ user: this.sanitizeUser(user) });
   };
 
-  refresh = async (request: FastifyRequest, reply: FastifyReply) => {
+  refresh = async (request: Request, response: Response) => {
     const bodyToken = (request.body as any)?.refreshToken;
-    const refreshToken = bodyToken || request.cookies.refreshToken;
+    const refreshToken = bodyToken || request.cookies?.refreshToken;
     if (!refreshToken) {
-      return reply.status(400).send({ error: 'MISSING_REFRESH_TOKEN' });
+      return response.status(400).json({ error: 'MISSING_REFRESH_TOKEN' });
     }
     try {
-      const payload = request.server.jwt.verify(refreshToken, {
-        key: env.JWT_REFRESH_SECRET
-      }) as { sub: string };
+      const payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as {
+        sub: string;
+        isAdmin?: boolean;
+      };
       const valid = await this.authService.verifyRefreshToken(payload.sub, refreshToken);
       if (!valid) {
-        return reply.status(401).send({ error: 'TOKEN_REVOKED' });
+        return response.status(401).json({ error: 'TOKEN_REVOKED' });
       }
-      const tokens = await this.authService.generateTokens(payload.sub);
+      const tokens = await this.authService.generateTokens(payload.sub, payload.isAdmin ?? false);
       await this.authService.revokeRefreshToken(payload.sub, refreshToken);
-      this.setTokens(reply, tokens);
-      return { ok: true };
+      this.setTokens(response, tokens);
+      return response.json({ ok: true });
     } catch (error) {
-      return reply.status(401).send({ error: 'TOKEN_REVOKED' });
+      return response.status(401).json({ error: 'TOKEN_REVOKED' });
     }
   };
 
-  logout = async (request: FastifyRequest, reply: FastifyReply) => {
-    const refreshToken = request.cookies.refreshToken;
+  logout = async (request: Request, response: Response) => {
+    const refreshToken = request.cookies?.refreshToken;
     if (refreshToken) {
       try {
-        const payload = request.server.jwt.verify(refreshToken, {
-          key: env.JWT_REFRESH_SECRET
-        }) as { sub: string };
+        const payload = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as { sub: string };
         await this.authService.revokeRefreshToken(payload.sub, refreshToken);
       } catch (err) {
-        request.log.warn({ err }, 'failed to revoke refresh token');
+        logger.warn({ err }, 'failed to revoke refresh token');
       }
     }
-    reply.clearCookie('accessToken');
-    reply.clearCookie('refreshToken');
-    return reply.status(204).send();
+    response.clearCookie('accessToken');
+    response.clearCookie('refreshToken');
+    return response.status(204).send();
   };
 
-  me = async (request: FastifyRequest, reply: FastifyReply) => {
+  me = async (request: AuthenticatedRequest, response: Response) => {
     const ctxUser = request.user;
     if (!ctxUser) {
-      return reply.status(401).send({ error: 'UNAUTHORIZED' });
+      return response.status(401).json({ error: 'UNAUTHORIZED' });
     }
     const user = await this.authService.getById(ctxUser.sub);
     if (!user) {
-      return reply.status(401).send({ error: 'UNAUTHORIZED' });
+      return response.status(401).json({ error: 'UNAUTHORIZED' });
     }
-    return { user: this.sanitizeUser(user) };
+    return response.json({ user: this.sanitizeUser(user) });
   };
 
   private sanitizeUser(user: any) {
@@ -94,16 +96,16 @@ export class AuthController {
     };
   }
 
-  private setTokens(reply: FastifyReply, tokens: { accessToken: string; refreshToken: string }) {
-    reply
-      .setCookie('accessToken', tokens.accessToken, {
+  private setTokens(response: Response, tokens: { accessToken: string; refreshToken: string }) {
+    response
+      .cookie('accessToken', tokens.accessToken, {
         httpOnly: true,
         sameSite: 'lax',
         secure: env.NODE_ENV === 'production',
         path: '/',
         maxAge: 60 * 15
       })
-      .setCookie('refreshToken', tokens.refreshToken, {
+      .cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
         sameSite: 'lax',
         secure: env.NODE_ENV === 'production',

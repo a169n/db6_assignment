@@ -9,6 +9,6 @@
     "types": ["node"],
     "resolveJsonModule": true
   },
-  "include": ["../../apps/api/src", "../../apps/api/fastify.d.ts"],
+  "include": ["../../apps/api/src"],
   "exclude": ["node_modules", "dist"]
 }

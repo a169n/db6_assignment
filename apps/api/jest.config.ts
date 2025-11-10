@@ -12,6 +12,7 @@ const config: Config = {
     '^@services/(.*)$': '<rootDir>/src/services/$1',
     '^@models/(.*)$': '<rootDir>/src/models/$1',
     '^@utils/(.*)$': '<rootDir>/src/utils/$1',
+    '^@middleware/(.*)$': '<rootDir>/src/middleware/$1',
     '^@reco/(.*)$': '<rootDir>/src/reco/$1',
     '^@schemas/(.*)$': '<rootDir>/src/schemas/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',

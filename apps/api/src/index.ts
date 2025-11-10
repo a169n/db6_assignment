@@ -1,127 +1,93 @@
-import Fastify from 'fastify';
-import cookie from '@fastify/cookie';
-import cors from '@fastify/cors';
-import helmet from '@fastify/helmet';
-import fastifyJwt from '@fastify/jwt';
-import rateLimit from '@fastify/rate-limit';
-import fastifySwagger from '@fastify/swagger';
-import fastifySwaggerUi from '@fastify/swagger-ui';
-import fastifyStatic from '@fastify/static';
+import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import type { Server } from 'http';
+import express, { type Application, type Request, type Response, type NextFunction } from 'express';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import pinoHttp from 'pino-http';
+import swaggerUi from 'swagger-ui-express';
+import { parse } from 'yaml';
 import { env } from '@config/env';
 import { logger } from '@config/logger';
-import mongoosePlugin from '@plugins/mongoose';
-import redisPlugin from '@plugins/redis';
-import authRoutes from '@routes/auth.routes';
-import productRoutes from '@routes/product.routes';
-import interactionRoutes from '@routes/interaction.routes';
-import recoRoutes from '@routes/reco.routes';
-import searchRoutes from '@routes/search.routes';
-import systemRoutes from '@routes/system.routes';
+import { connectMongo, disconnectMongo } from '@plugins/mongoose';
+import { connectRedis, disconnectRedis } from '@plugins/redis';
+import { registerAuthRoutes } from '@routes/auth.routes';
+import { registerProductRoutes } from '@routes/product.routes';
+import { registerInteractionRoutes } from '@routes/interaction.routes';
+import { registerRecoRoutes } from '@routes/reco.routes';
+import { registerSearchRoutes } from '@routes/search.routes';
+import { registerSystemRoutes } from '@routes/system.routes';
 import { metricsStore } from '@lib/metrics';
+import { ZodError } from 'zod';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const docsPath = path.join(__dirname, '../../../docs/openapi.yaml');
+const swaggerDocument = parse(fs.readFileSync(docsPath, 'utf8'));
 
-export const app = Fastify({
-  logger
-});
+export const app: Application = express();
 
-app.register(cookie, {
-  hook: 'onRequest'
-});
-
-app.register(cors, {
-  origin: env.WEB_ORIGIN,
-  credentials: true
-});
-
-app.register(helmet);
-
-app.register(rateLimit, {
-  max: Number(env.RATE_LIMIT_MAX),
-  timeWindow: Number(env.RATE_LIMIT_WINDOW)
-});
-
-app.register(fastifyJwt, {
-  secret: env.JWT_ACCESS_SECRET,
-  cookie: {
-    cookieName: 'accessToken'
-  }
-});
-
-app.decorate('authenticate', async function (request: any, reply: any) {
-  try {
-    const token = request.cookies.accessToken;
-    if (!token) throw new Error('Missing token');
-    const decoded = this.jwt.verify(token, { key: env.JWT_ACCESS_SECRET }) as any;
-    request.user = { sub: decoded.sub };
-  } catch (err) {
-    return reply.code(401).send({ error: 'UNAUTHORIZED' });
-  }
-});
-
-app.decorate('requireAdmin', async function (request: any, reply: any) {
-  await app.authenticate(request, reply);
-  if (reply.sent) {
-    return reply;
-  }
-  if (!request.user?.sub) {
-    return reply.code(401).send({ error: 'UNAUTHORIZED' });
-  }
-  if (request.user.sub !== 'admin') {
-    return reply.code(403).send({ error: 'FORBIDDEN' });
-  }
-});
-
-app.decorate('csrfProtection', async function (request: any, reply: any) {
-  const origin = request.headers.origin || request.headers.referer;
-  if (origin && !origin.startsWith(env.WEB_ORIGIN)) {
-    return reply.code(403).send({ error: 'CSRF_REJECTED' });
-  }
-});
-
-app.register(mongoosePlugin);
-app.register(redisPlugin);
-
-app.addHook('onRequest', async () => {
+app.use(pinoHttp({ logger }));
+app.use(cookieParser());
+app.use(
+  cors({
+    origin: env.WEB_ORIGIN,
+    credentials: true
+  })
+);
+app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(
+  rateLimit({
+    windowMs: Number(env.RATE_LIMIT_WINDOW),
+    max: Number(env.RATE_LIMIT_MAX)
+  })
+);
+app.use((req, _res, next) => {
   metricsStore.incRequest();
+  next();
+});
+app.use('/static', express.static(path.join(__dirname, '../../../docs')));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+registerSystemRoutes(app);
+registerAuthRoutes(app);
+registerProductRoutes(app);
+registerInteractionRoutes(app);
+registerRecoRoutes(app);
+registerSearchRoutes(app);
+
+app.get('/', (_req: Request, res: Response) => {
+  res.json({ status: 'ok' });
 });
 
-app.register(fastifySwagger, {
-  openapi: {
-    info: {
-      title: 'NoSQL Recommendation API',
-      version: '1.0.0'
-    }
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof ZodError) {
+    return res.status(400).json({ error: 'VALIDATION_ERROR', details: err.flatten() });
   }
+  logger.error({ err }, 'Unhandled error');
+  return res.status(500).json({ error: 'INTERNAL_SERVER_ERROR' });
 });
 
-app.register(fastifySwaggerUi, {
-  routePrefix: '/docs'
-});
+export async function initializeApp() {
+  await connectMongo();
+  await connectRedis();
+}
 
-app.register(fastifyStatic, {
-  root: path.join(__dirname, '../../../docs'),
-  prefix: '/static/'
-});
+export async function shutdownApp() {
+  await Promise.all([disconnectMongo(), disconnectRedis()]);
+}
 
-app.register(systemRoutes);
-app.register(authRoutes);
-app.register(productRoutes);
-app.register(interactionRoutes);
-app.register(recoRoutes);
-app.register(searchRoutes);
-
-app.get('/', async () => ({ status: 'ok' }));
-
-export async function start() {
+export async function start(): Promise<Server> {
+  await initializeApp();
   const port = Number(env.PORT);
-  await app.listen({ port, host: '0.0.0.0' });
-  logger.info(`API running on ${port}`);
-  return app;
+  return new Promise<Server>((resolve) => {
+    const server = app.listen(port, '0.0.0.0', () => {
+      logger.info(`API running on ${port}`);
+      resolve(server);
+    });
+  });
 }
 
 export default app;
-export type AppInstance = typeof app;
