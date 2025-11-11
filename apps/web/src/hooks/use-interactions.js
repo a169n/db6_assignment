@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 export const useInteraction = () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -9,12 +9,12 @@ export const useInteraction = () => {
         },
         onSuccess: (_data, variables) => {
             if (variables.type !== 'view') {
-                toast.success('Interaction recorded');
+                showToast('success', 'Interaction recorded');
             }
             queryClient.invalidateQueries({ queryKey: ['recommendations'] });
         },
         onError: () => {
-            toast.error('Failed to record interaction');
+            showToast('error', 'Failed to record interaction');
         }
     });
 };

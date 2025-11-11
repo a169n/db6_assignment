@@ -3,12 +3,13 @@ import { useAuth } from '@/features/auth/auth-context';
 import { useRecommendations } from '@/hooks/use-recommendations';
 import { useProducts } from '@/hooks/use-products';
 import { RecommendationRibbon } from '@/components/product/recommendation-ribbon';
+import { RecommendationRibbonSkeleton } from '@/components/product/recommendation-ribbon-skeleton';
 
 const HomePage: React.FC = () => {
   const { user } = useAuth();
-  const { data: userReco } = useRecommendations('user', Boolean(user));
-  const { data: itemReco } = useRecommendations('item', Boolean(user));
-  const { data: catalog } = useProducts(1);
+  const { data: userReco, isLoading: userRecoLoading } = useRecommendations('user', Boolean(user));
+  const { data: itemReco, isLoading: itemRecoLoading } = useRecommendations('item', Boolean(user));
+  const { data: catalog, isLoading: catalogLoading } = useProducts(1);
 
   const trending = catalog?.items.slice(0, 6).map((item) => ({
     id: item._id,
@@ -33,30 +34,38 @@ const HomePage: React.FC = () => {
 
       {user ? (
         <div className="space-y-8">
-          <RecommendationRibbon
-            title="Because people like you loved these"
-            products={(userReco?.products || []).map((entry) => ({
-              id: entry.product._id,
-              name: entry.product.name,
-              slug: entry.product.slug,
-              price: entry.product.price,
-              description: entry.product.description,
-              image: entry.product.images?.[0],
-              reason: entry.reason
-            }))}
-          />
-          <RecommendationRibbon
-            title="Products similar to your favorites"
-            products={(itemReco?.products || []).map((entry) => ({
-              id: entry.product._id,
-              name: entry.product.name,
-              slug: entry.product.slug,
-              price: entry.product.price,
-              description: entry.product.description,
-              image: entry.product.images?.[0],
-              reason: entry.reason
-            }))}
-          />
+          {userRecoLoading ? (
+            <RecommendationRibbonSkeleton />
+          ) : (
+            <RecommendationRibbon
+              title="Because people like you loved these"
+              products={(userReco?.products || []).map((entry) => ({
+                id: entry.product._id,
+                name: entry.product.name,
+                slug: entry.product.slug,
+                price: entry.product.price,
+                description: entry.product.description,
+                image: entry.product.images?.[0],
+                reason: entry.reason
+              }))}
+            />
+          )}
+          {itemRecoLoading ? (
+            <RecommendationRibbonSkeleton />
+          ) : (
+            <RecommendationRibbon
+              title="Products similar to your favorites"
+              products={(itemReco?.products || []).map((entry) => ({
+                id: entry.product._id,
+                name: entry.product.name,
+                slug: entry.product.slug,
+                price: entry.product.price,
+                description: entry.product.description,
+                image: entry.product.images?.[0],
+                reason: entry.reason
+              }))}
+            />
+          )}
         </div>
       ) : (
         <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
@@ -64,7 +73,11 @@ const HomePage: React.FC = () => {
         </p>
       )}
 
-      <RecommendationRibbon title="Trending this week" products={trending || []} />
+      {catalogLoading ? (
+        <RecommendationRibbonSkeleton />
+      ) : (
+        <RecommendationRibbon title="Trending this week" products={trending || []} />
+      )}
     </div>
   );
 };

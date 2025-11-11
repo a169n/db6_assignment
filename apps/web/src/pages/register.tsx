@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
 import { useAuth, type AuthUser } from '@/features/auth/auth-context';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { showToast } from '@/lib/toast';
 
 const registerSchema = z
   .object({
@@ -49,10 +49,10 @@ const RegisterPage: React.FC = () => {
       queryClient.setQueryData<AuthUser | null>(['auth', 'me'], response.data.user);
       await refetch();
       queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-      toast.success('Account created! Welcome to NovaShop');
+      showToast('success', 'Account created! Welcome to NovaShop');
       navigate('/', { replace: true });
     } catch (error) {
-      toast.error('Could not create account');
+      showToast('error', 'Could not create account');
     }
   };
 

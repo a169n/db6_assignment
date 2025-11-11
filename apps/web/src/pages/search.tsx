@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
 import { useSearch } from '@/hooks/use-search';
+import { useCategories } from '@/hooks/use-categories';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product/product-card';
+import { ProductGridSkeleton } from '@/components/product/product-grid-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const SearchPage: React.FC = () => {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const { data, fetchNextPage, hasNextPage, isFetching } = useSearch({
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useSearch({
     q: query,
     category: category || undefined,
     minPrice: minPrice ? Number(minPrice) : undefined,
     maxPrice: maxPrice ? Number(maxPrice) : undefined
   });
+  const { data: categoryOptions = [], isLoading: categoriesLoading } = useCategories();
 
   const results = data?.pages.flatMap((page) => page.results) ?? [];
+  const initialLoading = isLoading && results.length === 0;
 
   return (
     <div className="space-y-8">
@@ -37,7 +42,23 @@ const SearchPage: React.FC = () => {
           <label className="text-xs uppercase text-slate-500" htmlFor="category">
             Category
           </label>
-          <Input id="category" value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Electronics" />
+          {categoriesLoading ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <select
+              id="category"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+            >
+              <option value="">All categories</option>
+              {categoryOptions.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
@@ -55,23 +76,27 @@ const SearchPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {results.map((item) => (
-          <ProductCard
-            key={item._id}
-            id={item._id}
-            name={item.name}
-            slug={item.slug}
-            description={item.description}
-            price={item.price}
-            image={item.images?.[0]}
-          />
-        ))}
-      </div>
+      {initialLoading ? (
+        <ProductGridSkeleton count={4} />
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2">
+          {results.map((item) => (
+            <ProductCard
+              key={item._id}
+              id={item._id}
+              name={item.name}
+              slug={item.slug}
+              description={item.description}
+              price={item.price}
+              image={item.images?.[0]}
+            />
+          ))}
+        </div>
+      )}
 
-      {hasNextPage && (
-        <Button onClick={() => fetchNextPage()} disabled={isFetching}>
-          {isFetching ? 'Loading…' : 'Load more'}
+      {hasNextPage && !initialLoading && (
+        <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+          {isFetchingNextPage ? 'Loading…' : 'Load more'}
         </Button>
       )}
     </div>

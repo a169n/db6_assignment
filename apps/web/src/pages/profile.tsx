@@ -4,12 +4,31 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
 import { useFavorites } from '@/hooks/use-favorites';
 import { ProductGrid } from '@/components/product/product-grid';
-import { toast } from 'sonner';
+import { ProductGridSkeleton } from '@/components/product/product-grid-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
+import { showToast } from '@/lib/toast';
 
 const ProfilePage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading: isAuthLoading } = useAuth();
   const favorites = useFavorites(Boolean(user));
   const navigate = useNavigate();
+
+  if (isAuthLoading) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <Skeleton className="h-8 w-1/2" />
+        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+        <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+          <Skeleton className="h-4 w-1/4" />
+          <ProductGridSkeleton count={3} />
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return null;
@@ -17,7 +36,7 @@ const ProfilePage: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    toast.success('Signed out');
+    showToast('success', 'Signed out');
     navigate('/', { replace: true });
   };
 
@@ -61,7 +80,7 @@ const ProfilePage: React.FC = () => {
           </Button>
         </div>
         {favorites.isLoading ? (
-          <p className="text-sm text-slate-500">Loading favorites…</p>
+          <ProductGridSkeleton count={3} />
         ) : favorites.favorites.length ? (
           <ProductGrid
             products={favorites.favorites.slice(0, 3).map((item) => ({

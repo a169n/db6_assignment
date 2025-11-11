@@ -10,6 +10,7 @@ export function registerProductRoutes(app: Application) {
 
   const router = Router();
   router.get('/', asyncHandler(controller.list));
+  router.get('/categories', asyncHandler(controller.categories));
   router.get('/:slug', asyncHandler(controller.get));
   router.post('/', authenticate, requireAdmin, asyncHandler(controller.create));
   router.patch('/:id', authenticate, requireAdmin, asyncHandler(controller.update));

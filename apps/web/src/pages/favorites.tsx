@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/features/auth/auth-context';
 import { useFavorites } from '@/hooks/use-favorites';
 import { ProductGrid } from '@/components/product/product-grid';
+import { ProductGridSkeleton } from '@/components/product/product-grid-skeleton';
 import { Button } from '@/components/ui/button';
 import { HeartOff } from 'lucide-react';
 
@@ -32,7 +33,7 @@ const FavoritesPage: React.FC = () => {
         </p>
       </div>
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading favorites…</p>
+        <ProductGridSkeleton count={3} />
       ) : products.length ? (
         <ProductGrid
           products={products}

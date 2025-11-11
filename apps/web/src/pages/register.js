@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
 import { useAuth } from '@/features/auth/auth-context';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { showToast } from '@/lib/toast';
 const registerSchema = z
     .object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -40,11 +40,11 @@ const RegisterPage = () => {
             queryClient.setQueryData(['auth', 'me'], response.data.user);
             await refetch();
             queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-            toast.success('Account created! Welcome to NovaShop');
+            showToast('success', 'Account created! Welcome to NovaShop');
             navigate('/', { replace: true });
         }
         catch (error) {
-            toast.error('Could not create account');
+            showToast('error', 'Could not create account');
         }
     };
     return (_jsxs("div", { className: "mx-auto max-w-md space-y-6", children: [_jsxs("div", { className: "space-y-2 text-center", children: [_jsx("h1", { className: "text-2xl font-semibold text-slate-900 dark:text-white", children: "Create an account" }), _jsx("p", { className: "text-sm text-slate-600 dark:text-slate-300", children: "Tell us about your preferences to fine-tune recommendations instantly." })] }), _jsxs("form", { onSubmit: handleSubmit(onSubmit), className: "space-y-4 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900", children: [_jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "name", children: "Name" }), _jsx(Input, { id: "name", placeholder: "Alex Morgan", ...register('name') }), errors.name && _jsx("p", { className: "text-sm text-red-500", children: errors.name.message })] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "email", children: "Email" }), _jsx(Input, { id: "email", type: "email", placeholder: "you@example.com", ...register('email') }), errors.email && _jsx("p", { className: "text-sm text-red-500", children: errors.email.message })] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "password", children: "Password" }), _jsx(Input, { id: "password", type: "password", placeholder: "Strong password", ...register('password') }), errors.password && _jsx("p", { className: "text-sm text-red-500", children: errors.password.message })] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "confirmPassword", children: "Confirm password" }), _jsx(Input, { id: "confirmPassword", type: "password", placeholder: "Repeat password", ...register('confirmPassword') }), errors.confirmPassword && _jsx("p", { className: "text-sm text-red-500", children: errors.confirmPassword.message })] }), _jsx(Button, { type: "submit", className: "w-full", disabled: isSubmitting, children: isSubmitting ? 'Creating account…' : 'Create account' })] })] }));

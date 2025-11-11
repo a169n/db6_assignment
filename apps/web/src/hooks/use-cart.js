@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 export const useCart = (enabled) => {
     const queryClient = useQueryClient();
     const cartQuery = useQuery({
@@ -30,10 +30,10 @@ export const useCart = (enabled) => {
                 update: 'Cart updated',
                 remove: 'Removed from cart'
             };
-            toast.success(messageMap[variables.action]);
+            showToast('success', messageMap[variables.action]);
         },
         onError: () => {
-            toast.error('Unable to update cart');
+            showToast('error', 'Unable to update cart');
         }
     });
     const items = cartQuery.data || [];

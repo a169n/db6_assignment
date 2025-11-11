@@ -35,4 +35,9 @@ export class ProductController {
     }
     return response.json({ product });
   };
+
+  categories = async (_request: Request, response: Response) => {
+    const categories = await this.service.listCategories();
+    return response.json({ categories });
+  };
 }

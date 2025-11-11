@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import api from '@/lib/api';
+import { showToast } from '@/lib/toast';
 export const useFavorites = (enabled) => {
     const queryClient = useQueryClient();
     const favoritesQuery = useQuery({
@@ -23,10 +23,10 @@ export const useFavorites = (enabled) => {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['favorites'] });
             queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-            toast.success(variables.action === 'add' ? 'Added to favorites' : 'Removed from favorites');
+            showToast('success', variables.action === 'add' ? 'Added to favorites' : 'Removed from favorites');
         },
         onError: () => {
-            toast.error('Unable to update favorites');
+            showToast('error', 'Unable to update favorites');
         }
     });
     const favorites = favoritesQuery.data || [];

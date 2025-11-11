@@ -62,4 +62,9 @@ export class ProductService {
     ]);
     return interactions.map((i) => ({ product: i.product, score: i.score }));
   }
+
+  async listCategories() {
+    const categories = await ProductModel.distinct('category');
+    return categories.sort();
+  }
 }

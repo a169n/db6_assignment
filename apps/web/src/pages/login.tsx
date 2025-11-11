@@ -9,7 +9,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
 import { useAuth, type AuthUser } from '@/features/auth/auth-context';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -35,11 +35,11 @@ const LoginPage: React.FC = () => {
       queryClient.setQueryData<AuthUser | null>(['auth', 'me'], response.data.user);
       await refetch();
       queryClient.invalidateQueries({ queryKey: ['recommendations'] });
-      toast.success('Signed in successfully');
+      showToast('success', 'Signed in successfully');
       const redirectTo = (location.state as any)?.from?.pathname || '/';
       navigate(redirectTo, { replace: true });
     } catch (error) {
-      toast.error('Invalid credentials');
+      showToast('error', 'Invalid credentials');
     }
   };
 

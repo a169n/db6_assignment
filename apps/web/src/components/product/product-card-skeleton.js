@@ -1,0 +1,4 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+export const ProductCardSkeleton = () => (_jsxs(Card, { className: "flex h-full flex-col", children: [_jsxs(CardHeader, { className: "space-y-3", children: [_jsx(Skeleton, { className: "h-40 w-full rounded-md" }), _jsx(Skeleton, { className: "h-4 w-3/4" }), _jsx(Skeleton, { className: "h-4 w-1/3" })] }), _jsxs(CardContent, { className: "flex flex-1 flex-col justify-between space-y-4", children: [_jsx(Skeleton, { className: "h-20 w-full" }), _jsxs("div", { className: "flex items-center justify-between gap-2", children: [_jsx(Skeleton, { className: "h-9 w-24" }), _jsx(Skeleton, { className: "h-9 w-24" })] })] })] }));

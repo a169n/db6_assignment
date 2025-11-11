@@ -7,11 +7,12 @@ import { useFavorites } from '@/hooks/use-favorites';
 import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart } from 'lucide-react';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
+import { ProductDetailSkeleton } from './product-detail-skeleton';
 
 const ProductDetailPage: React.FC = () => {
   const { slug = '' } = useParams();
-  const { data: product } = useProduct(slug);
+  const { data: product, isLoading } = useProduct(slug);
   const interaction = useInteraction();
   const { mutate } = interaction;
   const { user } = useAuth();
@@ -24,13 +25,17 @@ const ProductDetailPage: React.FC = () => {
     }
   }, [product?._id, user, mutate]);
 
+  if (isLoading) {
+    return <ProductDetailSkeleton />;
+  }
+
   if (!product) {
-    return <div className="py-10 text-center text-sm text-slate-500">Loading product...</div>;
+    return <div className="py-10 text-center text-sm text-slate-500">Product not found.</div>;
   }
 
   const handleFavorite = () => {
     if (!user) {
-      toast.info('Sign in to save favorites.');
+      showToast('info', 'Sign in to save favorites.');
       return;
     }
     if (!product) return;
@@ -43,7 +48,7 @@ const ProductDetailPage: React.FC = () => {
 
   const handlePurchase = () => {
     if (!user) {
-      toast.info('Sign in to record interactions.');
+      showToast('info', 'Sign in to record interactions.');
       return;
     }
     if (!product) return;
@@ -52,10 +57,13 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!user) {
-      toast.info('Sign in to add items to your cart.');
+      showToast('info', 'Sign in to add items to your cart.');
       return;
     }
     if (!product) return;
+    if (cart.items.some((item) => item.product._id === product._id)) {
+      return;
+    }
     cart.addToCart(product._id, 1);
   };
 
@@ -92,8 +100,14 @@ const ProductDetailPage: React.FC = () => {
             />
             {product && favorites.isFavorite(product._id) ? 'In favorites' : 'Save to favorites'}
           </Button>
-          <Button variant="outline" onClick={handleAddToCart} className="flex items-center justify-center gap-2">
-            <ShoppingCart className="h-4 w-4" /> Add to cart
+          <Button
+            variant={cart.items.some((item) => item.product._id === product._id) ? 'secondary' : 'outline'}
+            onClick={handleAddToCart}
+            className="flex items-center justify-center gap-2"
+            disabled={cart.items.some((item) => item.product._id === product._id)}
+          >
+            <ShoppingCart className="h-4 w-4" />{' '}
+            {cart.items.some((item) => item.product._id === product._id) ? 'In cart' : 'Add to cart'}
           </Button>
           <Button onClick={handlePurchase}>Purchase</Button>
         </div>

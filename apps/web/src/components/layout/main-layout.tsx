@@ -5,6 +5,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/providers/theme-provider';
 import { Sun, Moon } from 'lucide-react';
+import { useCart } from '@/hooks/use-cart';
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -15,6 +16,8 @@ const navItems = [
 export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const { theme, toggle } = useTheme();
+  const cart = useCart(Boolean(user));
+  const cartCount = cart.items.length;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
@@ -48,10 +51,13 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 <NavLink
                   to="/cart"
                   className={({ isActive }) =>
-                    `transition-colors hover:text-brand ${isActive ? 'text-brand' : ''}`
+                    `relative transition-colors hover:text-brand ${isActive ? 'text-brand' : ''}`
                   }
                 >
                   Cart
+                  {cartCount > 0 && (
+                    <span className="ml-1 rounded-full bg-brand/10 px-2 text-xs font-medium text-brand">{cartCount}</span>
+                  )}
                 </NavLink>
               </>
             )}

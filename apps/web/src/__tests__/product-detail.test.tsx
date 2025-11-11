@@ -24,6 +24,27 @@ vi.mock('@/features/auth/auth-context', () => ({
   useAuth: () => ({ user: { id: 'user-1', name: 'Test User' } })
 }));
 
+vi.mock('@/hooks/use-favorites', () => ({
+  useFavorites: () => ({
+    favorites: [],
+    isFavorite: () => false,
+    toggleFavorite: vi.fn(),
+    isLoading: false
+  })
+}));
+
+vi.mock('@/hooks/use-cart', () => ({
+  useCart: () => ({
+    items: [],
+    subtotal: 0,
+    isLoading: false,
+    isUpdating: false,
+    addToCart: vi.fn(),
+    updateQuantity: vi.fn(),
+    removeFromCart: vi.fn()
+  })
+}));
+
 describe('ProductDetailPage', () => {
   it('renders product info', () => {
     render(

@@ -4,8 +4,9 @@ import { useAuth } from '@/features/auth/auth-context';
 import { useCart } from '@/hooks/use-cart';
 import { useInteraction } from '@/hooks/use-interactions';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 
 const CartPage: React.FC = () => {
   const { user } = useAuth();
@@ -26,13 +27,13 @@ const CartPage: React.FC = () => {
 
   const handleCheckout = () => {
     if (!items.length) {
-      toast.info('Add items to your cart before checking out.');
+      showToast('info', 'Add items to your cart before checking out.');
       return;
     }
     items.forEach((item) => {
       interaction.mutate({ productId: item.product._id, type: 'purchase' });
     });
-    toast.success('Checkout complete! Purchases recorded to refine recommendations.');
+    showToast('success', 'Checkout complete! Purchases recorded to refine recommendations.');
   };
 
   return (
@@ -44,7 +45,17 @@ const CartPage: React.FC = () => {
         </p>
       </div>
       {isLoading ? (
-        <p className="text-sm text-slate-500">Loading cart…</p>
+        <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+          <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+          <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
       ) : items.length ? (
         <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
           <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">

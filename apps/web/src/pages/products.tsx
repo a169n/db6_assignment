@@ -1,15 +1,16 @@
 import React from 'react';
 import { useProducts } from '@/hooks/use-products';
 import { ProductGrid } from '@/components/product/product-grid';
+import { ProductGridSkeleton } from '@/components/product/product-grid-skeleton';
 import { InteractionButtons } from '@/components/product/interaction-buttons';
 import { useInteraction } from '@/hooks/use-interactions';
 import { useAuth } from '@/features/auth/auth-context';
 import { useFavorites } from '@/hooks/use-favorites';
 import { useCart } from '@/hooks/use-cart';
-import { toast } from 'sonner';
+import { showToast } from '@/lib/toast';
 
 const ProductsPage: React.FC = () => {
-  const { data } = useProducts(1);
+  const { data, isLoading } = useProducts(1);
   const interaction = useInteraction();
   const { user } = useAuth();
   const favorites = useFavorites(Boolean(user));
@@ -17,7 +18,7 @@ const ProductsPage: React.FC = () => {
 
   const handleInteraction = async (productId: string, type: 'view' | 'like' | 'purchase') => {
     if (!user) {
-      toast.info('Sign in to record interactions and improve recommendations.');
+      showToast('info', 'Sign in to record interactions and improve recommendations.');
       return;
     }
     interaction.mutate({ productId, type });
@@ -25,7 +26,7 @@ const ProductsPage: React.FC = () => {
 
   const handleFavorite = (productId: string) => {
     if (!user) {
-      toast.info('Sign in to save favorites.');
+      showToast('info', 'Sign in to save favorites.');
       return;
     }
     const alreadyFavorite = favorites.isFavorite(productId);
@@ -37,11 +38,13 @@ const ProductsPage: React.FC = () => {
 
   const handleAddToCart = (productId: string) => {
     if (!user) {
-      toast.info('Sign in to add items to your cart.');
+      showToast('info', 'Sign in to add items to your cart.');
       return;
     }
     cart.addToCart(productId, 1);
   };
+
+  const skeleton = <ProductGridSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -51,24 +54,29 @@ const ProductsPage: React.FC = () => {
           Every interaction helps tailor your feed. View, like, or purchase to refine the collaborative filtering model.
         </p>
       </div>
-      <ProductGrid
-        products={(data?.items || []).map((item) => ({
-          id: item._id,
-          name: item.name,
-          slug: item.slug,
-          description: item.description,
-          price: item.price,
-          image: item.images?.[0]
-        }))}
-        onView={(id) => handleInteraction(id, 'view')}
-        renderFooter={(product) => (
-          <InteractionButtons
-            liked={favorites.isFavorite(product.id)}
-            onToggleLike={() => handleFavorite(product.id)}
-            onAddToCart={() => handleAddToCart(product.id)}
-          />
-        )}
-      />
+      {isLoading ? (
+        skeleton
+      ) : (
+        <ProductGrid
+          products={(data?.items || []).map((item) => ({
+            id: item._id,
+            name: item.name,
+            slug: item.slug,
+            description: item.description,
+            price: item.price,
+            image: item.images?.[0]
+          }))}
+          onView={(id) => handleInteraction(id, 'view')}
+          renderFooter={(product) => (
+            <InteractionButtons
+              liked={favorites.isFavorite(product.id)}
+              inCart={cart.items.some((item) => item.product._id === product.id)}
+              onToggleLike={() => handleFavorite(product.id)}
+              onAddToCart={() => handleAddToCart(product.id)}
+            />
+          )}
+        />
+      )}
     </div>
   );
 };
