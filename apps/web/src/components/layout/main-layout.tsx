@@ -35,6 +35,26 @@ export const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }
                 {item.label}
               </NavLink>
             ))}
+            {user && (
+              <>
+                <NavLink
+                  to="/favorites"
+                  className={({ isActive }) =>
+                    `transition-colors hover:text-brand ${isActive ? 'text-brand' : ''}`
+                  }
+                >
+                  Favorites
+                </NavLink>
+                <NavLink
+                  to="/cart"
+                  className={({ isActive }) =>
+                    `transition-colors hover:text-brand ${isActive ? 'text-brand' : ''}`
+                  }
+                >
+                  Cart
+                </NavLink>
+              </>
+            )}
           </nav>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">

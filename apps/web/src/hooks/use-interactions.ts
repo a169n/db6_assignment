@@ -8,8 +8,10 @@ export const useInteraction = () => {
     mutationFn: async ({ productId, type }: { productId: string; type: 'view' | 'like' | 'purchase' }) => {
       await api.post('/interactions', { productId, type });
     },
-    onSuccess: () => {
-      toast.success('Interaction recorded');
+    onSuccess: (_data, variables) => {
+      if (variables.type !== 'view') {
+        toast.success('Interaction recorded');
+      }
       queryClient.invalidateQueries({ queryKey: ['recommendations'] });
     },
     onError: () => {

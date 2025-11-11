@@ -2,19 +2,23 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Product } from './use-products';
 
+type SearchResponse = { results: Product[]; nextCursor: string | null };
+
 export const useSearch = (params: { q?: string; category?: string; minPrice?: number; maxPrice?: number }) => {
-  return useInfiniteQuery({
-    queryKey: ['search', params],
-    initialPageParam: undefined as string | undefined,
-    queryFn: async ({ pageParam }) => {
+  return useInfiniteQuery<SearchResponse>(
+    ['search', params],
+    async ({ pageParam }) => {
+      const cursor = (pageParam as string | undefined) ?? undefined;
       const response = await api.get('/search', {
         params: {
           ...params,
-          cursor: pageParam || undefined
+          cursor
         }
       });
-      return response.data as { results: Product[]; nextCursor: string | null };
+      return response.data as SearchResponse;
     },
-    getNextPageParam: (lastPage) => lastPage.nextCursor || undefined
-  });
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor || undefined
+    }
+  );
 };

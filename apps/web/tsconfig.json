@@ -8,7 +8,9 @@
       "@/lib/*": ["lib/*"],
       "@/pages/*": ["pages/*"],
       "@/features/*": ["features/*"],
-      "@/routes/*": ["routes/*"]
-    }
+      "@/routes/*": ["routes/*"],
+      "@/providers/*": ["providers/*"]
+    },
+    "types": ["vitest/globals", "@testing-library/jest-dom", "vite/client", "node"]
   }
 }

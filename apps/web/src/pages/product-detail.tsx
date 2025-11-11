@@ -3,7 +3,10 @@ import { useParams } from 'react-router-dom';
 import { useProduct } from '@/hooks/use-products';
 import { useInteraction } from '@/hooks/use-interactions';
 import { useAuth } from '@/features/auth/auth-context';
+import { useFavorites } from '@/hooks/use-favorites';
+import { useCart } from '@/hooks/use-cart';
 import { Button } from '@/components/ui/button';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ProductDetailPage: React.FC = () => {
@@ -12,6 +15,8 @@ const ProductDetailPage: React.FC = () => {
   const interaction = useInteraction();
   const { mutate } = interaction;
   const { user } = useAuth();
+  const favorites = useFavorites(Boolean(user));
+  const cart = useCart(Boolean(user));
 
   useEffect(() => {
     if (product && user) {
@@ -23,12 +28,35 @@ const ProductDetailPage: React.FC = () => {
     return <div className="py-10 text-center text-sm text-slate-500">Loading product...</div>;
   }
 
-  const handleAction = (type: 'like' | 'purchase') => {
+  const handleFavorite = () => {
+    if (!user) {
+      toast.info('Sign in to save favorites.');
+      return;
+    }
+    if (!product) return;
+    const alreadyFavorite = favorites.isFavorite(product._id);
+    favorites.toggleFavorite(product._id);
+    if (!alreadyFavorite) {
+      mutate({ productId: product._id, type: 'like' });
+    }
+  };
+
+  const handlePurchase = () => {
     if (!user) {
       toast.info('Sign in to record interactions.');
       return;
     }
-    mutate({ productId: product._id, type });
+    if (!product) return;
+    mutate({ productId: product._id, type: 'purchase' });
+  };
+
+  const handleAddToCart = () => {
+    if (!user) {
+      toast.info('Sign in to add items to your cart.');
+      return;
+    }
+    if (!product) return;
+    cart.addToCart(product._id, 1);
   };
 
   return (
@@ -52,10 +80,22 @@ const ProductDetailPage: React.FC = () => {
           Likes and purchases influence both user-based and item-based recommenders. Your activity updates the matrix instantly.
         </p>
         <div className="flex flex-col gap-3">
-          <Button variant="outline" onClick={() => handleAction('like')}>
-            I like this
+          <Button
+            variant={product && favorites.isFavorite(product._id) ? 'default' : 'outline'}
+            onClick={handleFavorite}
+            aria-pressed={product ? favorites.isFavorite(product._id) : false}
+            className="flex items-center justify-center gap-2"
+          >
+            <Heart
+              className="h-4 w-4"
+              fill={product && favorites.isFavorite(product._id) ? 'currentColor' : 'none'}
+            />
+            {product && favorites.isFavorite(product._id) ? 'In favorites' : 'Save to favorites'}
           </Button>
-          <Button onClick={() => handleAction('purchase')}>Purchase</Button>
+          <Button variant="outline" onClick={handleAddToCart} className="flex items-center justify-center gap-2">
+            <ShoppingCart className="h-4 w-4" /> Add to cart
+          </Button>
+          <Button onClick={handlePurchase}>Purchase</Button>
         </div>
       </aside>
     </div>

@@ -9,6 +9,8 @@ import ProductsPage from '@/pages/products';
 import ProductDetailPage from '@/pages/product-detail';
 import ProfilePage from '@/pages/profile';
 import SearchPage from '@/pages/search';
+import FavoritesPage from '@/pages/favorites';
+import CartPage from '@/pages/cart';
 import { ProtectedRoute } from '@/components/routing/protected-route';
 import { Toaster } from 'sonner';
 
@@ -27,6 +29,22 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/favorites"
+            element={
+              <ProtectedRoute>
+                <FavoritesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute>
+                <CartPage />
               </ProtectedRoute>
             }
           />

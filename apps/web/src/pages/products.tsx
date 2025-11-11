@@ -4,12 +4,16 @@ import { ProductGrid } from '@/components/product/product-grid';
 import { InteractionButtons } from '@/components/product/interaction-buttons';
 import { useInteraction } from '@/hooks/use-interactions';
 import { useAuth } from '@/features/auth/auth-context';
+import { useFavorites } from '@/hooks/use-favorites';
+import { useCart } from '@/hooks/use-cart';
 import { toast } from 'sonner';
 
 const ProductsPage: React.FC = () => {
   const { data } = useProducts(1);
   const interaction = useInteraction();
   const { user } = useAuth();
+  const favorites = useFavorites(Boolean(user));
+  const cart = useCart(Boolean(user));
 
   const handleInteraction = async (productId: string, type: 'view' | 'like' | 'purchase') => {
     if (!user) {
@@ -17,6 +21,26 @@ const ProductsPage: React.FC = () => {
       return;
     }
     interaction.mutate({ productId, type });
+  };
+
+  const handleFavorite = (productId: string) => {
+    if (!user) {
+      toast.info('Sign in to save favorites.');
+      return;
+    }
+    const alreadyFavorite = favorites.isFavorite(productId);
+    favorites.toggleFavorite(productId);
+    if (!alreadyFavorite) {
+      interaction.mutate({ productId, type: 'like' });
+    }
+  };
+
+  const handleAddToCart = (productId: string) => {
+    if (!user) {
+      toast.info('Sign in to add items to your cart.');
+      return;
+    }
+    cart.addToCart(productId, 1);
   };
 
   return (
@@ -39,8 +63,9 @@ const ProductsPage: React.FC = () => {
         onView={(id) => handleInteraction(id, 'view')}
         renderFooter={(product) => (
           <InteractionButtons
-            onLike={() => handleInteraction(product.id, 'like')}
-            onPurchase={() => handleInteraction(product.id, 'purchase')}
+            liked={favorites.isFavorite(product.id)}
+            onToggleLike={() => handleFavorite(product.id)}
+            onAddToCart={() => handleAddToCart(product.id)}
           />
         )}
       />

@@ -32,11 +32,12 @@ const RegisterPage = () => {
     const navigate = useNavigate();
     const onSubmit = async (data) => {
         try {
-            await api.post('/auth/register', {
+            const response = await api.post('/auth/register', {
                 name: data.name,
                 email: data.email,
                 password: data.password
             });
+            queryClient.setQueryData(['auth', 'me'], response.data.user);
             await refetch();
             queryClient.invalidateQueries({ queryKey: ['recommendations'] });
             toast.success('Account created! Welcome to NovaShop');

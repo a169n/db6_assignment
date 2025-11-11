@@ -92,7 +92,12 @@ export class AuthController {
       email: user.email,
       name: user.name,
       prefs: user.prefs,
-      isAdmin: user.isAdmin
+      isAdmin: user.isAdmin,
+      favorites: (user.favorites || []).map((fav: any) => fav?.toString?.() ?? fav),
+      cart: (user.cart || []).map((item: any) => ({
+        productId: item.product?.toString?.() ?? item.product,
+        quantity: item.quantity
+      }))
     };
   }
 

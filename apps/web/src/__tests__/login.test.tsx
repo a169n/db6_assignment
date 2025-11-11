@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import LoginPage from '@/pages/login';
 
 vi.mock('@/features/auth/auth-context', () => ({
@@ -11,9 +13,20 @@ vi.mock('@/lib/api', () => ({
   }
 }));
 
+const renderLoginPage = () => {
+  const queryClient = new QueryClient();
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+};
+
 describe('LoginPage', () => {
   it('renders login form fields', () => {
-    render(<LoginPage />);
+    renderLoginPage();
     expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
   });

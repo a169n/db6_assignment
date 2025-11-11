@@ -10,6 +10,11 @@ export interface AuthUser {
     categories?: string[];
   };
   isAdmin?: boolean;
+  favorites?: string[];
+  cart?: Array<{
+    productId: string;
+    quantity: number;
+  }>;
 }
 
 type AuthContextValue = {

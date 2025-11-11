@@ -22,7 +22,8 @@ const LoginPage = () => {
     const { refetch } = useAuth();
     const onSubmit = async (data) => {
         try {
-            await api.post('/auth/login', data);
+            const response = await api.post('/auth/login', data);
+            queryClient.setQueryData(['auth', 'me'], response.data.user);
             await refetch();
             queryClient.invalidateQueries({ queryKey: ['recommendations'] });
             toast.success('Signed in successfully');

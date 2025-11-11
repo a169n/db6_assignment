@@ -1,11 +1,14 @@
 import React from 'react';
 import { useAuth } from '@/features/auth/auth-context';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useFavorites } from '@/hooks/use-favorites';
+import { ProductGrid } from '@/components/product/product-grid';
 import { toast } from 'sonner';
 
 const ProfilePage: React.FC = () => {
   const { user, logout } = useAuth();
+  const favorites = useFavorites(Boolean(user));
   const navigate = useNavigate();
 
   if (!user) {
@@ -47,6 +50,35 @@ const ProfilePage: React.FC = () => {
           Log out
         </Button>
       </div>
+      <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase text-slate-500">Liked products</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">Heart items anywhere to see them here.</p>
+          </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/favorites">View all</Link>
+          </Button>
+        </div>
+        {favorites.isLoading ? (
+          <p className="text-sm text-slate-500">Loading favorites…</p>
+        ) : favorites.favorites.length ? (
+          <ProductGrid
+            products={favorites.favorites.slice(0, 3).map((item) => ({
+              id: item._id,
+              name: item.name,
+              slug: item.slug,
+              description: item.description,
+              price: item.price,
+              image: item.images?.[0]
+            }))}
+          />
+        ) : (
+          <p className="text-sm text-slate-500">
+            No favorites yet. Tap the heart on any product to improve recommendations.
+          </p>
+        )}
+      </section>
     </div>
   );
 };

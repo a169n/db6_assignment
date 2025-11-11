@@ -19,6 +19,7 @@ import { registerInteractionRoutes } from '@routes/interaction.routes';
 import { registerRecoRoutes } from '@routes/reco.routes';
 import { registerSearchRoutes } from '@routes/search.routes';
 import { registerSystemRoutes } from '@routes/system.routes';
+import { registerAccountRoutes } from '@routes/account.routes';
 import { metricsStore } from '@lib/metrics';
 import { ZodError } from 'zod';
 
@@ -57,6 +58,7 @@ registerProductRoutes(app);
 registerInteractionRoutes(app);
 registerRecoRoutes(app);
 registerSearchRoutes(app);
+registerAccountRoutes(app);
 
 app.get('/', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });

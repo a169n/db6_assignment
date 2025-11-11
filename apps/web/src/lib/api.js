@@ -4,14 +4,23 @@ const api = axios.create({
     withCredentials: true
 });
 api.interceptors.response.use((response) => response, async (error) => {
-    if (error.response?.status === 401 && !error.config.__isRetryRequest) {
-        try {
-            await api.post('/auth/refresh');
-            error.config.__isRetryRequest = true;
-            return api.request(error.config);
+    const originalRequest = (error.config ?? {});
+    const status = error.response?.status;
+    const url = originalRequest.url ?? '';
+    if (status === 401) {
+        const isRefreshCall = url.includes('/auth/refresh');
+        if (isRefreshCall) {
+            return Promise.reject(error);
         }
-        catch (refreshError) {
-            return Promise.reject(refreshError);
+        if (!originalRequest.__isRetryRequest) {
+            originalRequest.__isRetryRequest = true;
+            try {
+                await api.post('/auth/refresh');
+                return api.request(originalRequest);
+            }
+            catch (refreshError) {
+                return Promise.reject(refreshError);
+            }
         }
     }
     return Promise.reject(error);

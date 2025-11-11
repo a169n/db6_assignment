@@ -1,4 +1,4 @@
-import { Schema, model, type Document } from 'mongoose';
+import { Schema, model, type Document, type Types } from 'mongoose';
 
 export interface UserPrefs {
   categories: string[];
@@ -6,6 +6,11 @@ export interface UserPrefs {
     min: number;
     max: number;
   };
+}
+
+export interface CartItem {
+  product: Types.ObjectId;
+  quantity: number;
 }
 
 export interface UserDocument extends Document {
@@ -16,6 +21,8 @@ export interface UserDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
   isAdmin: boolean;
+  favorites: Types.ObjectId[];
+  cart: CartItem[];
 }
 
 const userSchema = new Schema<UserDocument>(
@@ -30,6 +37,13 @@ const userSchema = new Schema<UserDocument>(
         max: { type: Number }
       }
     },
+    favorites: [{ type: Schema.Types.ObjectId, ref: 'Product', default: [] }],
+    cart: [
+      {
+        product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+        quantity: { type: Number, default: 1, min: 1 }
+      }
+    ],
     isAdmin: { type: Boolean, default: false }
   },
   { timestamps: true }
