@@ -11,7 +11,7 @@ A full-stack commerce sandbox that demonstrates how favorites, carts, and user a
 | Area | Highlights |
 | --- | --- |
 | **apps/api** | Express 4 API, MongoDB via Mongoose, Redis caching, JWT auth with httpOnly cookies, argon2 password hashing, Zod validation, Jest tests |
-| **apps/web** | React 18 + Vite, React Router, React Query, shadcn-inspired UI primitives, react-hook-form + Zod forms, Vitest + Playwright tests |
+| **apps/web** | React 18 + Vite, React Router, React Query, shadcn-inspired UI primitives, react-hook-form + Zod forms, Vitest + Playwright tests, rich skeleton loaders |
 | **packages/** | Shared ESLint/Prettier/Tailwind/TS config |
 | **docs/** | OpenAPI spec plus architecture diagrams |
 
@@ -20,10 +20,10 @@ Monorepo commands (lint/test/dev/build) are wired through npm workspaces—run t
 ## Core features
 
 - **Authentication & profiles** – secure registration/login with refresh token rotation, CSRF/origin checks, and basic preference storage.
-- **Product catalog & search** – MongoDB-backed catalog with full-text search, category filters, pagination, and trending views.
+- **Product catalog & search** – MongoDB-backed catalog with full-text search, live categories from `/products/categories`, debounced keyword/price filters, pagination, and trending views.
 - **Interaction tracking** – views, likes, cart additions, and purchases become weighted `Interaction` documents that feed the recommenders.
 - **Favorites** – heart any product (from cards or detail pages) for one-click recall; hearts now fill when saved so it’s obvious what you love.
-- **Cart** – add items from anywhere, adjust quantities inline, and run a simulated checkout that records purchase interactions.
+- **Cart** – add items from anywhere, see cart badges and “In cart” states instantly, adjust quantities inline, and run a simulated checkout that records purchase interactions.
 - **Recommendation engine** – both user-user and item-item collaborative filtering modes with Redis caching and automatic invalidation on new signals.
 - **Tooling & quality gates** – ESLint, Prettier, Vitest, Playwright, Jest, Husky, and lint-staged keep the mono-repo tidy.
 
@@ -49,8 +49,8 @@ Monorepo commands (lint/test/dev/build) are wired through npm workspaces—run t
 
 On the React side:
 
-- Hearts are rendered inside `InteractionButtons` and on the product detail sidebar. They fill + read “Liked”/“In favorites” after a successful toggle.
-- The cart lives at `/cart`, with quantity steppers, removal buttons, a running subtotal, and a faux checkout action that fires purchase interactions for every line.
+- Hearts are rendered inside `InteractionButtons` and on the product detail sidebar. They fill + read “Liked”/“In favorites” after a successful toggle, and every toast ships with a dismiss action for quick cleanup.
+- The cart lives at `/cart`, with quantity steppers, removal buttons, “In cart” button states across the app, a running subtotal, and a faux checkout action that fires purchase interactions for every line. The nav shows a live badge for total items.
 - Favorites list at `/favorites` reuses the same product cards so you can hop back into browsing quickly.
 
 ## Getting started
@@ -99,6 +99,7 @@ CI can run `npm run test -ws` to execute both backend Jest suites and frontend V
 | `POST /auth/register`, `/auth/login`, `/auth/logout`, `/auth/refresh` | Authentication lifecycle |
 | `GET /me` | Session inspection (returns profile, favorites, and cart IDs) |
 | `GET /products`, `/products/:slug` | Catalog browsing |
+| `GET /products/categories` | Distinct category list for the search filters |
 | `GET /search` | Full-text search with filters |
 | `POST /interactions` | Record view/like/purchase signals |
 | `GET /reco/user`, `/reco/item` | Collaborative filtering recommendations |
