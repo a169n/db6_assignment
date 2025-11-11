@@ -2,6 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
 import { useSearch } from '@/hooks/use-search';
 import { useCategories } from '@/hooks/use-categories';
+import { useDebounce } from '@/hooks/use-debounce';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/product/product-card';
@@ -12,11 +13,14 @@ const SearchPage = () => {
     const [category, setCategory] = useState('');
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
+    const debouncedQuery = useDebounce(query, 300);
+    const debouncedMin = useDebounce(minPrice, 300);
+    const debouncedMax = useDebounce(maxPrice, 300);
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useSearch({
-        q: query,
+        q: debouncedQuery,
         category: category || undefined,
-        minPrice: minPrice ? Number(minPrice) : undefined,
-        maxPrice: maxPrice ? Number(maxPrice) : undefined
+        minPrice: debouncedMin ? Number(debouncedMin) : undefined,
+        maxPrice: debouncedMax ? Number(debouncedMax) : undefined
     });
     const { data: categoryOptions = [], isLoading: categoriesLoading } = useCategories();
     const results = data?.pages.flatMap((page) => page.results) ?? [];
