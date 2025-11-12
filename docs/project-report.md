@@ -1,7 +1,5 @@
 # NovaShop Recommendation System Report
 
-> _Add final UI screenshots here._
-
 ## 1. Executive Summary
 
 NovaShop is a full-stack commerce sandbox showcasing a MongoDB- and Redis-backed recommendation engine. The system records product interactions (views, likes, purchases) and surfaces collaborative filtering recommendations through a Fastify API and React front end. This report documents the chosen NoSQL stack, data modeling approach, recommendation algorithms, implementation highlights, setup instructions, and performance considerations.
@@ -106,6 +104,3 @@ Docker Compose orchestrates MongoDB, Redis, API, web app, seeding script, and re
 - Warm recommendations: `npm run reco:precompute -w apps/api`
 - Run quality gates: `npm run lint`, `npm run test -w apps/api`, `npm run test -w apps/web`, `npm run test:e2e -w apps/web`, `npm run typecheck`
 - Load test: `k6 run infra/k6/reco-load.js --env API_BASE_URL=http://localhost:4000`
-
-> _Insert performance dashboard screenshots or k6 result captures here._
-
