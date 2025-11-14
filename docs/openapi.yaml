@@ -13,12 +13,23 @@ security:
   - bearerAuth: []
 tags:
   - name: System
+    description: Health, readiness, and runtime metrics.
   - name: Auth
+    description: Authentication and session lifecycle.
   - name: Users
+    description: Current user profile endpoints.
   - name: Products
+    description: Catalog management and detail retrieval.
   - name: Interactions
+    description: Track likes, views, and purchases for recommendations.
+  - name: Favorites
+    description: Manage the customer favorites list.
+  - name: Cart
+    description: Manage shopping cart contents.
   - name: Recommendations
+    description: Personalized recommendation feeds.
   - name: Search
+    description: Full-text search endpoints.
 paths:
   /health:
     get:
@@ -149,6 +160,189 @@ paths:
                     $ref: '#/components/schemas/User'
         '401':
           description: Unauthorized
+  /me/favorites:
+    get:
+      tags: [Favorites]
+      summary: List favorite products
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Favorites collection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favorites:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '401':
+          description: Unauthorized
+    post:
+      tags: [Favorites]
+      summary: Add product to favorites
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FavoriteProductRequest'
+      responses:
+        '201':
+          description: Updated favorites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favorites:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Product not found
+  /me/favorites/{productId}:
+    delete:
+      tags: [Favorites]
+      summary: Remove product from favorites
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated favorites
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favorites:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Product not found
+  /me/cart:
+    get:
+      tags: [Cart]
+      summary: Retrieve shopping cart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current cart items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CartItem'
+        '401':
+          description: Unauthorized
+    post:
+      tags: [Cart]
+      summary: Add product to cart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemRequest'
+      responses:
+        '201':
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CartItem'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Product not found
+  /me/cart/{productId}:
+    patch:
+      tags: [Cart]
+      summary: Update cart quantity
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartQuantityRequest'
+      responses:
+        '200':
+          description: Updated cart items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CartItem'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Cart item not found
+    delete:
+      tags: [Cart]
+      summary: Remove product from cart
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated cart items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CartItem'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Cart item not found
   /products:
     get:
       tags: [Products]
@@ -454,6 +648,41 @@ components:
         type:
           type: string
           enum: [view, like, purchase]
+    FavoriteProductRequest:
+      type: object
+      required: [productId]
+      properties:
+        productId:
+          type: string
+    CartItemRequest:
+      type: object
+      required: [productId]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+    UpdateCartQuantityRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          minimum: 0
+          description: Zero or less removes the item.
+    CartItem:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+          minimum: 1
+        subtotal:
+          type: number
+          format: float
     RecommendationResponse:
       type: object
       properties:

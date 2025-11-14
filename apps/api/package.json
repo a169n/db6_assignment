@@ -15,6 +15,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed": "ts-node --require ./register-paths.js src/scripts/seed.ts",
     "reco:precompute": "ts-node --require ./register-paths.js src/reco/jobs/precompute.ts",
+    "reco:evaluate": "ts-node --require ./register-paths.js src/scripts/evaluate-recommendations.ts",
     "openapi:gen": "ts-node --require ./register-paths.js src/scripts/generate-openapi.ts"
   },
   "dependencies": {

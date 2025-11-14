@@ -89,6 +89,7 @@ On the React side:
 - **API tests** – `npm run test -w apps/api`
 - **Playwright smoke** – `npm run test:e2e -w apps/web`
 - **Lint/format** – `npm run lint`, `npm run format`
+- **Recommendation quality** – `npm run reco:evaluate -w apps/api [-- --limit 10 --holdout 3]` computes precision/recall/F1, add `--synthetic` to run against a generated offline dataset when Mongo isn’t available.
 
 CI can run `npm run test -ws` to execute both backend Jest suites and frontend Vitest suites together.
 

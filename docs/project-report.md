@@ -84,21 +84,38 @@ Redis caches recommendation payloads for 10 minutes, and cache invalidation trig
 - Enable MongoDB Atlas Performance Advisor to suggest index refinements as datasets scale.
 - Parallelize background precompute job using worker pools for large user counts.
 
-## 6. Future Enhancements
+## 6. Recommendation Quality Evaluation
+
+### 6.1 Methodology
+- `npm run reco:evaluate -w apps/api -- --limit 12 --holdout 3` evaluates recommendation precision/recall/F1 by holding out the last three positive interactions per user, training on the remainder, and replaying the user-user collaborative filtering pipeline in-memory. 【F:README.md†L80-L85】【F:apps/api/src/scripts/evaluate-recommendations.ts†L1-L352】
+- The script can consume live interaction data from MongoDB or a deterministic synthetic dataset (for offline runs) and reports both micro and macro averages so regressions are visible even if the user mix changes. 【F:apps/api/src/scripts/evaluate-recommendations.ts†L55-L205】
+
+### 6.2 Results
+Running against the seeded synthetic dataset (24 users, 66 held-out likes/purchases) with top-12 recommendations produced:
+
+| Metric | Score |
+| --- | --- |
+| Precision (micro) | 0.177 |
+| Recall (micro) | 0.773 |
+| F1-score (micro) | 0.288 |
+
+High recall indicates neighbors frequently surface the withheld products, while precision highlights room to tighten re-ranking (e.g., mixing in content filters). Re-running the script after tuning algorithms or weights provides a fast quantitative regression gate.
+
+## 7. Future Enhancements
 - **Hybrid Recommendations**: Blend collaborative filtering with content-based signals (category, price range) for new users.
 - **Explainability**: Surface richer reasoning, such as specific interactions that led to a recommendation.
 - **A/B Experimentation**: Introduce feature flags to compare recommendation strategies and measure conversion impact.
 - **Edge Delivery**: Cache popular recommendation payloads at CDN edges for anonymous users using trending heuristics.
 
-## 7. Appendix
+## 8. Appendix
 
-### 7.1 Seed Data Overview
+### 8.1 Seed Data Overview
 Seeder generates 60 products across seven categories, 25 demo users plus an admin, and randomized interactions weighted by event type—providing a realistic dataset for demos and testing. 【F:apps/api/src/scripts/seed-data.ts†L1-L76】
 
-### 7.2 Docker Services
+### 8.2 Docker Services
 Docker Compose orchestrates MongoDB, Redis, API, web app, seeding script, and recurring precompute worker with health checks for reliable startup. 【F:infra/docker-compose.yml†L1-L86】
 
-### 7.3 Key Commands
+### 8.3 Key Commands
 - Install & build: `npm install`, `npm run build -w apps/api`
 - Seed data: `npm run seed -w apps/api`
 - Warm recommendations: `npm run reco:precompute -w apps/api`
