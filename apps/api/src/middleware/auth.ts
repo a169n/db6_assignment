@@ -28,8 +28,13 @@ export function requireAdmin(request: Request, response: Response, next: NextFun
 
 export function csrfProtection(request: Request, response: Response, next: NextFunction) {
   const origin = request.headers.origin || request.headers.referer;
-  if (origin && !origin.toString().startsWith(env.WEB_ORIGIN)) {
-    return response.status(403).json({ error: 'CSRF_REJECTED' });
+  if (origin) {
+    const originString = origin.toString();
+    const allowedOrigins = [env.WEB_ORIGIN, env.DOCS_ORIGIN].filter(Boolean);
+    const isAllowed = allowedOrigins.some((allowed) => originString.startsWith(allowed));
+    if (!isAllowed) {
+      return response.status(403).json({ error: 'CSRF_REJECTED' });
+    }
   }
   return next();
 }

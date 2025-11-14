@@ -63,12 +63,13 @@ On the React side:
    ```
 2. **Environment**  
    Create a `.env` at the repo root (the API auto-loads it) and supply at least:
-   ```
-   MONGO_URI=mongodb://localhost:27017/nova
-   REDIS_URL=redis://localhost:6379
-   WEB_ORIGIN=http://localhost:5173
-   ```
-   Other values have sensible defaults—see `apps/api/src/config/env.ts`.
+  ```
+  MONGO_URI=mongodb://localhost:27017/nova
+  REDIS_URL=redis://localhost:6379
+  WEB_ORIGIN=http://localhost:5173
+  DOCS_ORIGIN=http://localhost:4000
+  ```
+  Other values have sensible defaults—see `apps/api/src/config/env.ts`.
 3. **Seed sample data (optional but recommended)**
    ```bash
    npm run seed -w apps/api

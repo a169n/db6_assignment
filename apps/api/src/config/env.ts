@@ -47,6 +47,7 @@ const envSchema = z.object({
   JWT_ACCESS_SECRET: z.string().default(ensureSecret('JWT_ACCESS_SECRET')),
   JWT_REFRESH_SECRET: z.string().default(ensureSecret('JWT_REFRESH_SECRET')),
   WEB_ORIGIN: z.string().default('http://localhost:5173'),
+  DOCS_ORIGIN: z.string().optional(),
   RECO_MODE: z.enum(['user', 'item']).default('user'),
   ACCESS_TOKEN_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL: z.string().default('7d'),
@@ -55,7 +56,15 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW: z.string().default('60000')
 });
 
-export const env = envSchema.parse(process.env);
+type EnvSchema = z.infer<typeof envSchema>;
+const parsedEnv = envSchema.parse(process.env) as EnvSchema;
+
+export const env: EnvSchema & { DOCS_ORIGIN: string } = {
+  ...parsedEnv,
+  DOCS_ORIGIN: parsedEnv.DOCS_ORIGIN && parsedEnv.DOCS_ORIGIN.trim().length > 0
+    ? parsedEnv.DOCS_ORIGIN
+    : `http://localhost:${parsedEnv.PORT}`
+};
 
 if (generatedSecrets.size > 0) {
   console.warn(

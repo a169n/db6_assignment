@@ -26,13 +26,33 @@ import { ZodError } from 'zod';
 const docsPath = path.join(__dirname, '../../../docs/openapi.yaml');
 const swaggerDocument = parse(fs.readFileSync(docsPath, 'utf8'));
 
+function normalizeOrigin(value?: string | null) {
+  if (!value) return '';
+  return value.replace(/\/$/, '');
+}
+
+const allowedOrigins = Array.from(
+  new Set([env.WEB_ORIGIN, env.DOCS_ORIGIN].map((origin) => normalizeOrigin(origin)).filter(Boolean))
+);
+
+function isAllowedOrigin(origin?: string | null) {
+  if (!origin) return true;
+  const normalized = normalizeOrigin(origin);
+  return allowedOrigins.some((allowed) => normalized === allowed);
+}
+
 export const app: Application = express();
 
 app.use(pinoHttp({ logger }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: env.WEB_ORIGIN,
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
     credentials: true
   })
 );

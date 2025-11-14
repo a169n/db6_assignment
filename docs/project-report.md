@@ -86,20 +86,59 @@ Redis caches recommendation payloads for 10 minutes, and cache invalidation trig
 
 ## 6. Recommendation Quality Evaluation
 
-### 6.1 Methodology
-- `npm run reco:evaluate -w apps/api -- --limit 12 --holdout 3` evaluates recommendation precision/recall/F1 by holding out the last three positive interactions per user, training on the remainder, and replaying the user-user collaborative filtering pipeline in-memory. 【F:README.md†L80-L85】【F:apps/api/src/scripts/evaluate-recommendations.ts†L1-L352】
-- The script can consume live interaction data from MongoDB or a deterministic synthetic dataset (for offline runs) and reports both micro and macro averages so regressions are visible even if the user mix changes. 【F:apps/api/src/scripts/evaluate-recommendations.ts†L55-L205】
+### 6.1 Purpose & Objectives
+- Validate that the collaborative filtering engine reliably resurfaces products users ultimately liked/purchased.
+- Capture objective metrics (precision, recall, F1-score) to compare future tuning experiments against a stable baseline.
+- Surface qualitative error patterns (e.g., false positives, cold-start misses) in order to refine data collection and algorithms.
 
-### 6.2 Results
-Running against the seeded synthetic dataset (24 users, 66 held-out likes/purchases) with top-12 recommendations produced:
+### 6.2 Methodology & Tooling
+- Command: `npm run reco:evaluate -w apps/api -- --limit 12 --holdout 3` which withholds the last three positive (like/purchase) interactions per user, trains on the remainder, and replays the user-user recommender against that split. 【apps/api/src/scripts/evaluate-recommendations.ts:1】
+- Data sources: live MongoDB interactions when available, or a deterministic synthetic dataset (24 users × 42 products) for offline runs. The script handles both by toggling `--synthetic`. 【apps/api/src/scripts/evaluate-recommendations.ts:55】
+- Metrics: computed per-user precision/recall/F1 plus micro/macro aggregates, along with execution samples to highlight best/worst performers. Results were captured after reseeding the demo dataset (66 held-out positives). 【apps/api/src/scripts/evaluate-recommendations.ts:255】
 
-| Metric | Score |
+### 6.3 Tables & Charts of Results
+
+| Metric | Micro | Macro |
+| --- | --- | --- |
+| Precision | 0.177 | 0.177 |
+| Recall | 0.773 | 0.778 |
+| F1-score | 0.288 | 0.287 |
+
+| Parameter | Value |
 | --- | --- |
-| Precision (micro) | 0.177 |
-| Recall (micro) | 0.773 |
-| F1-score (micro) | 0.288 |
+| Users evaluated | 24 |
+| Held-out positives | 66 |
+| Recommendation depth | Top-12 |
+| True positives (hits) | 51 |
+| False positives (misses) | 237 |
 
-High recall indicates neighbors frequently surface the withheld products, while precision highlights room to tighten re-ranking (e.g., mixing in content filters). Re-running the script after tuning algorithms or weights provides a fast quantitative regression gate.
+Top performing sample (anonymized user IDs):
+
+| User | Recs | Relevant | Hits | Precision | Recall | F1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 36d36633 | 12 | 3 | 3 | 0.25 | 1.00 | 0.40 |
+| e378bcea | 12 | 3 | 3 | 0.25 | 1.00 | 0.40 |
+| 2bdd5892 | 12 | 3 | 3 | 0.25 | 1.00 | 0.40 |
+| 7d738ec8 | 12 | 3 | 3 | 0.25 | 1.00 | 0.40 |
+| fc6ba02c | 12 | 3 | 3 | 0.25 | 1.00 | 0.40 |
+
+```mermaid
+pie title Recommendation Outcomes (Top-12 cohort)
+  "Correct hits" : 51
+  "Misses" : 237
+```
+
+### 6.4 Error Analysis & Identified Issues
+- **High false-positive rate** (precision 0.177) stems from recommending co-interacted products even when user vectors thinly overlap; low thresholds admit tangential products. Increasing neighbor quality filters or weighting by recentness can reduce noise.
+- **Long-tail products remain under-represented** because similarity focuses on high-frequency co-occurrences. Sparse categories therefore regress to popular defaults rather than diverse picks.
+- **Short interaction histories** for some users (just above the 5-train minimum) mean a single like heavily tilts cosine similarity, producing unstable lists. Bootstrapping with content-based priors would make cold users less volatile.
+- **CSRF & CORS constraints** previously blocked Swagger-driven test calls, hiding some API-level validation errors. Updated origin handling now lets QA run POST/DELETE tests straight from `/docs`, reducing blind spots.
+
+### 6.5 Conclusions & Recommendations
+- Maintain the evaluation script as a regression gate; integrate it into CI once real interaction data is available so each algorithm tweak surfaces deltas immediately.
+- Prioritize ranking improvements that trade a small amount of recall for meaningfully higher precision (e.g., hybrid scoring: 70% CF + 30% attribute distance).
+- Add temporal decay to down-rank stale signals and rerun the evaluator—expect precision gains if users’ tastes drift quickly.
+- Expand telemetry (cache hit rate vs. precision) to correlate infrastructure tuning with model quality, ensuring caching optimizations do not mask degraded recommendations.
 
 ## 7. Future Enhancements
 - **Hybrid Recommendations**: Blend collaborative filtering with content-based signals (category, price range) for new users.

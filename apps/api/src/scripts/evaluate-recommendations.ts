@@ -1,3 +1,12 @@
+// CLI script that evaluates collaborative filtering quality via precision/recall/F1.
+// Supports live Mongo data or a deterministic synthetic dataset for offline runs.
+// Usage example:
+//   npm run reco:evaluate -w apps/api -- --limit 12 --holdout 3 --synthetic
+// Flags:
+//   --limit <n>      Top-N recommendations to score (default 12)
+//   --holdout <n>    # of recent positives to move into the test set (default 3)
+//   --min-train <n>  Minimum train interactions for a user to be evaluated (default 5)
+//   --synthetic      Use generated data instead of MongoDB
 import mongoose from 'mongoose';
 import { faker } from '@faker-js/faker';
 import { env } from '@config/env';
@@ -52,6 +61,8 @@ function hasFlag(flag: string) {
   return process.argv.includes(flag);
 }
 
+// Pull all interactions from Mongo to evaluate against real data.
+// The script is read-only: it connects, streams, disconnects.
 async function loadInteractionsFromMongo(): Promise<EvalInteraction[]> {
   await mongoose.connect(env.MONGO_URI);
   const records = await InteractionModel.find().sort({ createdAt: 1 }).lean();
@@ -65,6 +76,8 @@ async function loadInteractionsFromMongo(): Promise<EvalInteraction[]> {
   }));
 }
 
+// Build a synthetic but deterministic dataset when Mongo isn’t available.
+// Deterministic seeding ensures CI runs get reproducible scores.
 function generateSyntheticDataset(userCount = 24, productCount = 42): EvalInteraction[] {
   faker.seed(2024);
   const categories = ['Electronics', 'Books', 'Home', 'Fitness', 'Fashion', 'Outdoors', 'Beauty'];
@@ -150,6 +163,10 @@ function generateSyntheticDataset(userCount = 24, productCount = 42): EvalIntera
   return dataset;
 }
 
+// Split each user history into train/test and compute their interaction vectors.
+// Each user contributes:
+//   - trainInteractions: every interaction except the most recent positives
+//   - test: product IDs from the holdout positives (unique)
 function buildUserPayloads(
   interactions: EvalInteraction[],
   holdoutCount: number,
@@ -202,6 +219,11 @@ function buildUserPayloads(
   return payloads;
 }
 
+// Re-run the user-user CF logic using the in-memory vectors for a target user.
+// Mirrors the production pipeline:
+//   1. Compute cosine similarity against every neighbor vector
+//   2. Keep top 30 neighbors
+//   3. Sum weighted interactions from those neighbors, excluding seen products
 function recommendForUser(
   userId: string,
   payloads: Map<string, UserEvalPayload>,
@@ -252,6 +274,8 @@ function computeDotProduct(a: Map<string, number>, b: Map<string, number>) {
   return sum;
 }
 
+// Aggregate precision/recall/F1 for all users plus macro/micro summaries.
+// Macro = average of per-user metrics; micro = aggregate counts across all users.
 function evaluateRecommendations(
   payloads: Map<string, UserEvalPayload>,
   limit: number
