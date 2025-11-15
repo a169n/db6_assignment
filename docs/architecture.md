@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart LR
-  Web["Web App (Vite React)"] -- REST/Fetch --> API["Fastify API (TypeScript)"]
+  Web["Web App (Vite React)"] -- REST/Fetch --> API["Express.js"]
   API -- JWT Cookies --> Web
   API -- CRUD --> MongoDB[(MongoDB Cluster)]
   API -- Cache Recos --> Redis[(Redis LRU Cache)]
